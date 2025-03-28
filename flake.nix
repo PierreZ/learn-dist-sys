@@ -22,7 +22,7 @@
 
       devShells = forEachSupportedSystem ({ pkgs }: {
         default = pkgs.mkShell {
-          packages = with pkgs; [ jdk gradle graphviz gnuplot maelstrom-clj ];
+          packages = with pkgs; [ jdk gradle graphviz gnuplot maelstrom-clj jbang ];
         };
       });
     };
