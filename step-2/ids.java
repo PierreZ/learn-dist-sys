@@ -65,7 +65,7 @@ class IdsNode {
         responseBody.put("type", "generate_ok");
         responseBody.put("in_reply_to", requestBody.get("msg_id").asInt());
         this.lastId++;
-        responseBody.put("id", this.lastId);
+        responseBody.put("id", this.nodeId + "-" + this.lastId);
 
         this.reply(dest, src, responseBody);
     }

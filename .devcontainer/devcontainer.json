@@ -1,0 +1,15 @@
+{
+    "name": "Java + JBang Development",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "jbangdev.jbang-vscode"
+            ]
+        }
+    },
+    "remoteUser": "vscode"
+}
