@@ -8,10 +8,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.time.Duration;
 
 /**
  * Solution implementation for the broadcast service that handles network partitions
  * by using reliable gossip protocol to ensure eventual consistency.
+ * This implementation uses Java 23's virtual threads from Project Loom for efficient concurrency.
  */
 public class SolutionBroadcastPartition {
     public static void main(String[] args) throws Exception {
@@ -53,11 +55,11 @@ class BroadcastServer {
     // Message counter for generating unique IDs
     private int nextMsgId = 0;
     
-    // Gossip scheduler for periodic propagation
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    
-    // Flag to keep track if we've started the gossip scheduler
+    // Flag to keep track if we've started the gossip thread
     private boolean gossipStarted = false;
+    
+    // Thread for virtual thread management
+    private Thread gossipThread;
     
     public BroadcastServer() {
         // Start the gossip protocol when the server is created
@@ -66,13 +68,24 @@ class BroadcastServer {
     
     private void startGossipProtocol() {
         if (!gossipStarted) {
-            scheduler.scheduleAtFixedRate(() -> {
-                try {
-                    propagateMessages();
-                } catch (Exception e) {
-                    System.err.println("Error in gossip: " + e.getMessage());
+            // Create a virtual thread for the gossip protocol
+            gossipThread = Thread.ofVirtual().name("gossip-thread").start(() -> {
+                while (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        // Run the gossip protocol
+                        propagateMessages();
+                        
+                        // Wait before next gossip round
+                        Thread.sleep(Duration.ofSeconds(1));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    } catch (Exception e) {
+                        System.err.println("Error in gossip protocol: " + e.getMessage());
+                    }
                 }
-            }, 1, 1, TimeUnit.SECONDS);
+            });
+            
             gossipStarted = true;
         }
     }
@@ -86,27 +99,50 @@ class BroadcastServer {
         Set<Integer> currentMessages = new HashSet<>(messagesToPropagate);
         List<String> targets = neighbors.isEmpty() ? nodeIds : neighbors;
         
+        // Use virtual threads for parallel message propagation to different nodes
+        List<Thread> propagationThreads = new ArrayList<>();
+        
         for (String node : targets) {
             if (node.equals(nodeId)) {
                 continue; // Skip self
             }
             
-            // Get pending messages for this node or create a new set
-            Set<Integer> nodePending = pendingMessages.computeIfAbsent(node, k -> ConcurrentHashMap.newKeySet());
-            
-            // Add all current messages to pending for this node
-            nodePending.addAll(currentMessages);
-            
-            // Try to send all pending messages
-            for (Integer message : new HashSet<>(nodePending)) {
+            // Create a virtual thread for each target node
+            Thread propagationThread = Thread.ofVirtual().name("propagate-to-" + node).start(() -> {
                 try {
-                    sendBroadcast(node, message);
-                    // If successful, remove from pending
-                    nodePending.remove(message);
+                    // Get pending messages for this node or create a new set
+                    Set<Integer> nodePending = pendingMessages.computeIfAbsent(
+                        node, k -> ConcurrentHashMap.newKeySet());
+                    
+                    // Add all current messages to pending for this node
+                    nodePending.addAll(currentMessages);
+                    
+                    // Try to send all pending messages
+                    for (Integer message : new HashSet<>(nodePending)) {
+                        try {
+                            sendBroadcast(node, message);
+                            // If successful, remove from pending
+                            nodePending.remove(message);
+                        } catch (Exception e) {
+                            // Keep in pending if failed
+                            System.err.println("Failed to send message " + message + 
+                                " to " + node + ": " + e.getMessage());
+                        }
+                    }
                 } catch (Exception e) {
-                    // Keep in pending if failed
-                    System.err.println("Failed to send message " + message + " to " + node + ": " + e.getMessage());
+                    System.err.println("Error propagating to " + node + ": " + e.getMessage());
                 }
+            });
+            
+            propagationThreads.add(propagationThread);
+        }
+        
+        // Wait for all propagation threads to complete
+        for (Thread thread : propagationThreads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
