@@ -1,2 +1,5 @@
 .direnv
 bin
+store
+*.iml
+.idea
