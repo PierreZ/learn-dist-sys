@@ -99,37 +99,6 @@ We've provided a skeleton implementation in the `Broadcast.java` file. The file 
 
 Your task is to improve this implementation in several stages to address the challenges mentioned above.
 
-## Testing Your Implementation
-
-For each goal, we've provided a dedicated run script:
-
-### Goal 1: Testing Basic Broadcast
-To test your solution for avoiding message amplification:
-
-```bash
-./run-goal1.sh
-```
-
-This script runs a basic test with a grid topology and no network latency.
-
-### Goal 2: Testing Latency Optimization
-To test your solution for reducing broadcast latency using network topology:
-
-```bash
-./run-goal2.sh
-```
-
-This script uses a tree topology with simulated network latency to test how well your implementation optimizes message propagation.
-
-### Goal 3: Testing Partition Tolerance
-To test your solution for handling network partitions:
-
-```bash
-./run-goal3.sh
-```
-
-This script introduces network partitions to test how well your implementation handles and recovers from network failures.
-
 ## Goal 1: Avoiding Message Amplification
 
 ### The Problem with Naive Broadcasting
@@ -156,20 +125,15 @@ However, this approach causes a serious problem called **message amplification**
 
 For a single broadcast in a system with N nodes, we end up sending N(N-1) messages! This quickly becomes unsustainable as the system grows.
 
-### Running the Naive Implementation to Observe Message Amplification
+### Testing Goal 1
 
-To see this problem in action, run the naive implementation with:
+To test your solution for avoiding message amplification, run:
 
 ```bash
 ./run-goal1.sh
 ```
 
-Watch the output closely - you'll see a flood of messages being exchanged between nodes. Pay attention to:
-- How many times the same message is sent across the network
-- How messages continually bounce between nodes
-- The exponential growth in network traffic even with just a few nodes
-
-This visualization of message amplification helps you understand why we need a better approach for broadcasting.
+This script runs a basic test with a grid topology and no network latency.
 
 ### Implementing a Better Solution
 
@@ -199,123 +163,290 @@ Even after solving the message amplification problem, we still face another chal
 
 The time it takes for a message to propagate to all nodes is crucial for applications that require quick updates across the system. This becomes especially important as the number of nodes grows.
 
-### Using Topology Information
+### Understanding Network Topology
 
-Maelstrom provides topology information through the `topology` message, which tells each node who its neighbors are. For example:
+In the real world, networks have specific topologies - the arrangement of nodes and connections between them. This topology information is critical for optimizing message propagation.
+
+In our system, this information is provided through a `topology` message:
 
 ```json
 {
-  "type": "topology",
-  "topology": {
-    "n1": ["n2", "n3"],
-    "n2": ["n1"],
-    "n3": ["n1"]
+  "body": {
+    "type": "topology",
+    "topology": {
+      "n1": ["n2", "n3"],
+      "n2": ["n1"],
+      "n3": ["n1"]
+    }
   }
 }
 ```
 
-This topology indicates that node n1 is connected to n2 and n3, while n2 and n3 are only connected to n1. This forms a "star" topology with n1 at the center.
+This tells us which nodes can directly communicate with each other. For example, in the above topology:
+- n1 can directly communicate with n2 and n3
+- n2 can directly communicate only with n1
+- n3 can directly communicate only with n1
 
-By using this topology information intelligently, we can create more efficient message propagation patterns:
+### Testing Goal 2
 
-1. Instead of each node broadcasting to all other nodes, nodes only send messages to their neighbors
-2. The topology can be designed to minimize the number of "hops" needed for a message to reach all nodes
-3. Different topologies (like trees or grids) have different latency characteristics
-
-### Testing with Different Topologies
-
-Our run script now includes variables for `TOPOLOGY` and `LATENCY` that you can modify to test different configurations:
+To test your solution for reducing broadcast latency using network topology, run:
 
 ```bash
-# Change these values to test different configurations
-TOPOLOGY="tree4"
-LATENCY=100
+./run-goal2.sh
 ```
 
-The topologies available are:
-- `grid`: Nodes form a 2D grid
-- `tree2`: Nodes form a binary tree
-- `tree3`: Nodes form a tree with 3 children per node
-- `tree4`: Nodes form a tree with 4 children per node
+This script uses a tree topology with simulated network latency to test how well your implementation optimizes message propagation.
 
-### Implementing a Low-Latency Solution
+When examining the results, pay attention to:
+- The pattern of message propagation
+- How long it takes for messages to reach all nodes
+- Which paths messages follow through the network
 
-To improve latency, you need to create an implementation that:
+### Implementing Latency Optimization
 
-1. Properly processes the topology information to identify neighbors
-2. Only forwards messages to its neighbors (instead of all nodes)
-3. Takes advantage of tree-based topologies to minimize propagation time
+To improve latency, we need to leverage the topology information to make smarter decisions about message forwarding:
 
-To test different topologies, modify the run script:
+1. Instead of broadcasting to all nodes, each node should only forward messages to its direct neighbors
+2. This way, messages travel through the most efficient paths in the network
+
+Implement this optimization by:
+1. Storing and using the topology information provided in the `topology` message
+2. Modifying your broadcast logic to only send messages to neighboring nodes
+
+Once you've implemented this optimization, run the test again:
 
 ```bash
-# Change these values to test different configurations
-TOPOLOGY="tree4"
-LATENCY=100
+./run-goal2.sh
 ```
 
-This approach significantly reduces both the number of messages and the time required for broadcasts to reach all nodes in the network.
+You should observe:
+- Reduced overall latency for message propagation
+- Fewer messages being sent across the network
+- More efficient use of the network topology
 
 ## Goal 3: Handling Network Partitions
 
-The final challenge is to make our broadcast system resilient to **network partitions** - situations where some nodes become temporarily unable to communicate with each other.
-
 ### The Challenge of Network Partitions
 
-In real distributed systems, network failures are inevitable:
-- Network connections can fail temporarily
-- Messages can be lost or delayed
-- Parts of the network can become completely isolated from others
+In real distributed systems, network failures happen regularly. Links between nodes can break, creating what we call **network partitions** - where the network is split into disconnected subgroups that cannot communicate with each other.
 
-When these partitions occur, our broadcast system should:
-1. Continue functioning within each partition
-2. Eventually reach consistency when partitions heal
-3. Ensure that all messages eventually propagate to all nodes
+This poses a serious challenge for broadcasting:
+- How do we ensure messages eventually reach all nodes?
+- How do we handle nodes that rejoin after being disconnected?
+- How do we maintain consistency across the system despite partitions?
 
-### Implementing Partition Tolerance
+### Testing Goal 3
 
-To handle network partitions effectively, we need several mechanisms:
-
-#### 1. Message Persistence
-- Keep track of all messages that need to be delivered
-- Don't assume a message is delivered just because it was sent
-
-#### 2. Retry Logic
-- Implement a mechanism to retry failed message deliveries
-- Use an exponential backoff strategy to avoid overwhelming the network
-
-#### 3. Gossip Protocol
-- Periodically share message state with neighbors
-- This helps messages propagate even when direct paths are unavailable
-
-#### 4. Conflict Resolution
-- When partitions heal, nodes may have inconsistent state
-- Implement a strategy to reconcile differences
-
-## Viewing Test Results
-
-After running any of the tests, you can visualize the results using:
+To test your solution for handling network partitions, run:
 
 ```bash
-../bin/maelstrom serve
+./run-goal3.sh
 ```
 
-Then open a web browser to http://localhost:8080 and examine:
-- `messages.svg` to see the message flow between nodes
-- `rate.png` to see the message rate over time
-- Check the logs for details on message counts
+This script introduces network partitions to test how well your implementation handles and recovers from network failures.
 
-In the naive implementation, you'll see an explosion of messages as each broadcast propagates through the network. Compare this with your improved implementation, which should show a dramatic reduction in message count.
+When examining the results, focus on:
+- How your system behaves during a partition
+- Whether messages are eventually delivered to all nodes after partitions heal
+- The consistency of the message set across all nodes
+
+### Implementing Partition Tolerance with Gossip
+
+To handle network partitions, we need a more robust approach. This is where **gossip protocols** come in:
+
+1. Instead of simply forwarding new messages, nodes periodically exchange their entire message sets
+2. This ensures that even after a partition heals, nodes can catch up on messages they missed
+3. The system eventually reaches consistency across all nodes
+
+#### Gossip Protocol Implementation Details
+
+Here's a detailed approach to implementing a gossip protocol for partition tolerance:
+
+##### 1. Background Gossip Thread
+
+You'll need a background mechanism to periodically run the gossip protocol. Virtual threads (introduced in Java 21) are ideal for this task since they're lightweight and efficient:
+
+```java
+// Set up a mechanism for periodic gossip
+private boolean gossipStarted = false;
+private Thread gossipThread;
+
+private void startGossipProtocol() {
+    if (!gossipStarted) {
+        // Using virtual threads (Java 21+)
+        gossipThread = Thread.ofVirtual().name("gossip-thread").start(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    // Run the gossip protocol
+                    propagateMessages();
+                    
+                    // Wait before next gossip round (e.g., 1 second)
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    System.err.println("Error in gossip protocol: " + e.getMessage());
+                }
+            }
+        });
+        
+        gossipStarted = true;
+    }
+}
+```
+
+##### 2. Message Tracking
+
+You need to track all messages that each node has seen:
+
+```java
+// Track messages that need to be propagated to other nodes
+private Set<Integer> messagesToPropagate = ConcurrentHashMap.newKeySet();
+
+// Add a message to the set of seen messages and mark it for propagation
+private void addMessage(int message) {
+    if (messages.add(message)) {
+        messagesToPropagate.add(message);
+    }
+}
+```
+
+##### 3. Message Set Exchange
+
+The core of the gossip protocol is the exchange of message sets:
+
+```java
+private void propagateMessages() throws Exception {
+    if (nodeId == null || messagesToPropagate.isEmpty()) {
+        return; // Not initialized or no messages to propagate
+    }
+    
+    // Make a copy to avoid concurrent modification
+    Set<Integer> currentMessages = new HashSet<>(messagesToPropagate);
+    
+    // Send a gossip message to each neighbor
+    for (String neighbor : neighbors) {
+        sendGossip(neighbor, currentMessages);
+    }
+}
+
+private void sendGossip(String dest, Set<Integer> messagesToSend) throws Exception {
+    ObjectNode body = mapper.createObjectNode();
+    body.put("type", "gossip");
+    body.put("msg_id", nextMsgId++);
+    
+    ArrayNode messagesArray = body.putArray("messages");
+    for (Integer message : messagesToSend) {
+        messagesArray.add(message);
+    }
+    
+    send(dest, body);
+}
+```
+
+##### 4. Handling Gossip Messages
+
+You need to handle incoming gossip messages and reconcile differences:
+
+```java
+// In your handleMessage method, add a case for gossip messages
+case "gossip":
+    handleGossip(body, src);
+    return null;
+
+// Gossip handler method
+private void handleGossip(JsonNode body, String src) throws Exception {
+    if (body.has("messages")) {
+        JsonNode messagesNode = body.get("messages");
+        for (JsonNode messageNode : messagesNode) {
+            int message = messageNode.asInt();
+            addMessage(message);
+        }
+    }
+}
+```
+
+##### 5. Error Handling and Resilience
+
+Ensure your implementation is resilient to various failure scenarios:
+
+```java
+// Example of robust message sending with error handling
+private void sendWithRetry(String dest, ObjectNode body) {
+    try {
+        send(dest, body);
+    } catch (Exception e) {
+        // Log error but don't crash - the gossip protocol will retry later
+        System.err.println("Failed to send to " + dest + ": " + e.getMessage());
+    }
+}
+```
+
+##### 6. Thread Safety Considerations
+
+When implementing gossip protocols, ensure thread safety for shared data structures:
+
+```java
+// Use thread-safe collections for data shared between the main thread and gossip thread
+private Set<Integer> messages = Collections.synchronizedSet(new HashSet<>());
+// OR
+private Set<Integer> messages = ConcurrentHashMap.newKeySet();
+```
+
+##### 7. Optimizations
+
+To make your gossip protocol more efficient:
+
+- **Incremental Gossip**: Only send messages the other node hasn't seen yet
+- **Push-Pull Gossip**: Ask nodes what messages they have before sending
+- **Exponential Backoff**: Increase the interval between gossip attempts if the network is congested
+- **Priority-based Propagation**: Prioritize newer messages over older ones
+
+Implement a gossip protocol by following these steps:
+1. Adding a periodic gossip mechanism where nodes share their complete message sets
+2. Implementing message set reconciliation to identify and share missing messages
+3. Ensuring each node eventually receives all messages, even after network partitions
+
+Once you've implemented your gossip-based solution, run:
+
+```bash
+./run-goal3.sh
+```
+
+You should observe:
+- Messages eventually reaching all nodes despite partitions
+- The system recovering after partitions heal
+- Eventual consistency across all nodes in the system
+
+## Analyzing Results
+
+After completing your implementation, you can analyze the results in detail:
+
+1. **Visualizing Message Flow**: Maelstrom generates detailed visualizations in its store directory
+   ```bash
+   cd /tmp/maelstrom-store
+   ```
+   Then open a web browser to http://localhost:8080 and examine:
+   - `messages.svg` to see the message flow between nodes
+   - `rate.png` to see the message rate over time
+   - Check the logs for details on message counts
+
+2. **Understanding Performance Metrics**: Pay attention to:
+   - **Message Count**: How many messages were sent in total
+   - **Convergence Time**: How long it took for all nodes to receive all messages
+   - **Recovery Time**: How quickly the system recovered after partitions
 
 ## Conclusion
 
-By completing these three goals, you've built a robust broadcast system that:
-1. Avoids message amplification through careful message tracking
-2. Minimizes latency by leveraging network topology
-3. Handles network partitions to ensure eventual consistency
+In this step, you've tackled three fundamental challenges in distributed systems:
+1. **Message Efficiency**: Avoiding the explosion of duplicate messages
+2. **Latency Optimization**: Using topology information to minimize propagation time
+3. **Partition Tolerance**: Ensuring the system works despite network failures
 
-These concepts are fundamental to building reliable distributed systems in real-world environments.
+These concepts are fundamental to many real-world distributed systems, from distributed databases to messaging platforms.
 
-## Next Steps
-
-After completing this step, you'll be ready to tackle more complex distributed systems challenges in the subsequent steps, building on the foundational principles you've learned here.
+Next steps to consider:
+- How would you optimize further for very large networks?
+- What trade-offs exist between consistency, availability, and partition tolerance?
+- How might you handle node failures in addition to network partitions?
