@@ -2,7 +2,7 @@
 set -ex
 
 # Java file to run - change this to test different implementations
-JAVA_FILE="Broadcast.java"
+JAVA_FILE="SolutionBroadcast.java"
 
 # Make sure the file is executable
 chmod +x "$JAVA_FILE"
