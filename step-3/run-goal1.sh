@@ -23,5 +23,3 @@ jbang build "$JAVA_FILE"
   --rate 10 \
   --topology "grid" \
   --latency 0
-
-echo "Test complete. View results at http://localhost:8080 after running '../bin/maelstrom serve'"

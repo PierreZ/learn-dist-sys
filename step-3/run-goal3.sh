@@ -30,5 +30,3 @@ jbang build "$JAVA_FILE"
   --topology "$TOPOLOGY" \
   --latency "$LATENCY" \
   --nemesis partition
-
-echo "Test complete. View results at http://localhost:8080 after running '../bin/maelstrom serve'"
