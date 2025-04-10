@@ -262,28 +262,13 @@ These IDs are all different, ensuring uniqueness across the entire system.
 
 ### Step 5: Test with Maelstrom
 
-Run the test again with our improved implementation:
-
-```bash
-#!/usr/bin/env bash
-set -ex
-
-../bin/maelstrom test -w unique-ids --bin ./UniqueId.java --time-limit 5 --node-count 3 --availability total --nemesis partition
-```
-
-Make sure to make your Java file executable:
-
-```bash
-chmod +x UniqueId.java
-```
-
-Then run the test:
+We've provided a run script that will test your implementation with Maelstrom:
 
 ```bash
 ./run.sh
 ```
 
-This time, the test should pass, confirming that our IDs are truly unique, even when the network experiences partitions.
+This will execute the test with multiple nodes and network partitions. The test should pass, confirming that our IDs are truly unique, even when the network experiences partitions.
 
 ## Complete Implementation
 

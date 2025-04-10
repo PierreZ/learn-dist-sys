@@ -115,331 +115,63 @@ String jsonResponse = mapper.writeValueAsString(responseBody);
 
 This pattern of parsing, processing, and generating JSON will be common across all the examples in this lab.
 
-## Implementation Steps
+## Getting Started
 
-> **Note**: For maximum learning benefit, we strongly encourage you to type out the code yourself rather than copy-pasting the examples. The process of writing the code line by line will help you better understand the concepts and internalize the patterns.
+We've provided a boilerplate implementation in the `Echo.java` file to help you get started. The file includes:
 
-Let's build our echo server step by step:
+- The basic setup for reading from stdin and writing to stdout
+- A skeleton `EchoServer` class with placeholders for message handling
+- An implementation of the `init` message handler
+- TODOs where you need to implement the echo functionality
 
-### Step 1: Create the basic file structure
+Your task is to implement the echo message handler to properly respond to echo requests from Maelstrom.
 
-Create a file named `Echo.java` in the `step-1` directory:
+If you get stuck or want to see a complete solution, you can reference the `SolutionEchoServer.java` file which contains a fully working implementation.
 
-```java
-///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS com.fasterxml.jackson.core:jackson-databind:2.15.2
+## Running the Echo Server
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.util.Scanner;
-
-public class Echo {
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static String nodeId;
-    
-    public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        
-        // Your code will go here
-    }
-}
-```
-
-### Step 2: Set up the main message processing loop
-
-Add a loop to read and parse incoming messages:
-
-```java
-while (scanner.hasNextLine()) {
-    String line = scanner.nextLine();
-    try {
-        JsonNode message = mapper.readTree(line);
-        String src = message.get("src").asText();
-        String dest = message.get("dest").asText();
-        JsonNode body = message.get("body");
-        String type = body.get("type").asText();
-        
-        // We'll handle message types here
-    } catch (Exception e) {
-        System.err.println("Error processing message: " + e.getMessage());
-    }
-}
-```
-
-### Step 3: Implement the init handler
-
-Add code to handle the init message:
-
-```java
-if (type.equals("init")) {
-    nodeId = body.get("node_id").asText();
-    System.err.println("Node " + nodeId + " initialized");
-    
-    // Create response
-    ObjectNode responseBody = mapper.createObjectNode();
-    responseBody.put("type", "init_ok");
-    responseBody.put("in_reply_to", body.get("msg_id").asInt());
-    
-    // Send response
-    sendResponse(src, responseBody);
-}
-```
-
-### Step 4: Implement the echo handler
-
-Add code to handle echo requests:
-
-```java
-else if (type.equals("echo")) {
-    ObjectNode responseBody = mapper.createObjectNode();
-    responseBody.put("type", "echo_ok");
-    responseBody.put("in_reply_to", body.get("msg_id").asInt());
-    responseBody.set("echo", body.get("echo"));
-    
-    sendResponse(src, responseBody);
-}
-```
-
-### Step 5: Add helper method for sending responses
-
-Add a helper method to format and send responses:
-
-```java
-private static void sendResponse(String dest, ObjectNode body) {
-    try {
-        ObjectNode response = mapper.createObjectNode();
-        response.put("src", nodeId);
-        response.put("dest", dest);
-        response.set("body", body);
-        
-        System.out.println(mapper.writeValueAsString(response));
-    } catch (Exception e) {
-        System.err.println("Error sending response: " + e.getMessage());
-    }
-}
-```
-
-### Step 6: Test with Maelstrom
-
-Once you've completed the implementation, you can test your echo server using the provided run.sh script:
+We've provided a `run.sh` script that will build and execute the echo test with Maelstrom:
 
 ```bash
-chmod +x Echo.java  # Make sure the file is executable
 ./run.sh
 ```
 
-This will run the Maelstrom test with the echo workload. If everything is working correctly, you should see this success message:
+This script will:
+1. Make sure your Echo.java file is executable
+2. Build it with JBang to check for compilation errors
+3. Run the Maelstrom test with appropriate parameters
+
+You should see Maelstrom's output indicating whether your test passed or failed.
+
+## Debug Visualization
+
+If you want to visualize the message flow, you can open the visualization server:
 
 ```
-Everything looks good! ヽ('ー`)ノ
-```
-
-The run.sh script calls Maelstrom with the appropriate parameters for testing the echo workload:
-
-```bash
-../bin/maelstrom test -w echo --bin ./Echo.java --node-count 1 --time-limit 10
-```
-
-## Final Solution
-
-If you've followed all the steps, your complete Echo.java file should look something like this:
-
-```java
-///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS com.fasterxml.jackson.core:jackson-databind:2.15.2
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.util.Scanner;
-
-public class Echo {
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static String nodeId;
-    private static int msgId = 0;
-    
-    public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            try {
-                JsonNode message = mapper.readTree(line);
-                String src = message.get("src").asText();
-                String dest = message.get("dest").asText();
-                JsonNode body = message.get("body");
-                String type = body.get("type").asText();
-                
-                if (type.equals("init")) {
-                    nodeId = body.get("node_id").asText();
-                    System.err.println("Node " + nodeId + " initialized");
-                    
-                    ObjectNode responseBody = mapper.createObjectNode();
-                    responseBody.put("type", "init_ok");
-                    responseBody.put("in_reply_to", body.get("msg_id").asInt());
-                    
-                    sendResponse(src, responseBody);
-                }
-                else if (type.equals("echo")) {
-                    ObjectNode responseBody = mapper.createObjectNode();
-                    responseBody.put("type", "echo_ok");
-                    responseBody.put("in_reply_to", body.get("msg_id").asInt());
-                    responseBody.set("echo", body.get("echo"));
-                    
-                    sendResponse(src, responseBody);
-                }
-                else {
-                    System.err.println("Unknown message type: " + type);
-                }
-                
-            } catch (Exception e) {
-                System.err.println("Error processing message: " + e.getMessage() + "\nInput was: " + line);
-            }
-        }
-    }
-    
-    private static void sendResponse(String dest, ObjectNode body) {
-        try {
-            ObjectNode response = mapper.createObjectNode();
-            response.put("src", nodeId);
-            response.put("dest", dest);
-            response.set("body", body);
-            
-            System.out.println(mapper.writeValueAsString(response));
-        } catch (Exception e) {
-            System.err.println("Error sending response: " + e.getMessage());
-        }
-    }
-}
-```
-
-### Step 7: Refactor to Use an EchoServer Class
-
-Let's improve our solution by refactoring it to use an object-oriented approach with an `EchoServer` class that handles the node functionality:
-
-```java
-///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS com.fasterxml.jackson.core:jackson-databind:2.15.2
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.util.Scanner;
-
-public class Echo {
-    public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        EchoServer server = new EchoServer();
-        
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            try {
-                JsonNode message = server.handleMessage(line);
-                if (message != null) {
-                    System.out.println(message);
-                }
-            } catch (Exception e) {
-                System.err.println("Error processing message: " + e.getMessage() + "\nInput was: " + line);
-            }
-        }
-    }
-}
-
-class EchoServer {
-    private final ObjectMapper mapper = new ObjectMapper();
-    private String nodeId;
-    
-    public String handleMessage(String messageJson) throws Exception {
-        JsonNode message = mapper.readTree(messageJson);
-        String src = message.get("src").asText();
-        String dest = message.get("dest").asText();
-        JsonNode body = message.get("body");
-        String type = body.get("type").asText();
-        
-        if (type.equals("init")) {
-            return handleInit(src, dest, body);
-        } else if (type.equals("echo")) {
-            return handleEcho(src, dest, body);
-        } else {
-            System.err.println("Unknown message type: " + type);
-            return null;
-        }
-    }
-    
-    private String handleInit(String src, String dest, JsonNode body) throws Exception {
-        nodeId = body.get("node_id").asText();
-        System.err.println("Node " + nodeId + " initialized");
-        
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "init_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        
-        return createResponse(src, responseBody);
-    }
-    
-    private String handleEcho(String src, String dest, JsonNode body) throws Exception {
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "echo_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        responseBody.set("echo", body.get("echo"));
-        
-        return createResponse(src, responseBody);
-    }
-    
-    private String createResponse(String dest, ObjectNode body) throws Exception {
-        ObjectNode response = mapper.createObjectNode();
-        response.put("src", nodeId);
-        response.put("dest", dest);
-        response.set("body", body);
-        
-        return mapper.writeValueAsString(response);
-    }
-}
-```
-
-## Understanding How Maelstrom Tests Work
-
-When you run a Maelstrom test:
-
-1. Maelstrom starts multiple copies of your node
-2. It sends an `init` message to each node
-3. It simulates clients that send `echo` requests 
-4. It verifies that each node responds correctly to the requests
-5. It generates reports on the behavior of your system
-
-This is a simple example, but the principles apply to more complex distributed systems we'll build in later steps.
-
-## Visualizing Results with Maelstrom Serve
-
-After running tests, Maelstrom generates detailed logs and visualizations in the `store/` directory. To easily view these results in a web browser, you can use the `serve` command:
-
-```bash
 ../bin/maelstrom serve
 ```
 
-This will start a local web server (typically on port 8080) that allows you to:
-
-1. Browse all test runs
-2. View node logs
-3. Examine message flow visualizations
-4. Analyze performance graphs
-5. Inspect error cases
-
-The web interface makes it much easier to understand what's happening in your system, especially for more complex workloads. 
-
-To access the interface, open [http://localhost:8080](http://localhost:8080) in your web browser after running the command.
-
-## Key Takeaways
-
-- Maelstrom communicates with nodes via standard input/output using JSON messages
-- Each node has a unique ID provided during initialization
-- Nodes must respond to client requests with the correct message format
-- Debugging information can be sent to standard error
+Then open a web browser to http://localhost:8080.
 
 ## Next Steps
 
-In the next step, we'll build a more complex system that involves communication between nodes and state management.
+In [Step 2](../step-2), we'll tackle a more complex challenge: generating unique IDs in a distributed system.
+
+## Troubleshooting
+
+### "Command not found" for jbang
+
+If you encounter an error like:
+
+```
+./Echo.java: line 1: jbang: command not found
+```
+
+Make sure JBang is properly installed or refer to [Step 0](../step-0) for installation instructions.
+
+### JSON Parse Error
+
+If you get JSON parsing errors, check that:
+1. Your JSON is well-formed
+2. You're properly escaping strings
+3. You're using the correct field names in your response

@@ -30,49 +30,64 @@ class EchoServer {
     private final ObjectMapper mapper = new ObjectMapper();
     private String nodeId;
     
+    // This method processes incoming messages by parsing the JSON string, 
+    // extracting the src, dest, body, and message type, and calling the 
+    // appropriate handler based on the message type.
+    // 
+    // @param messageJson The incoming message as a JSON string
+    // @return The response string or null if no response is needed
+    // @throws Exception If an error occurs during message processing
     public String handleMessage(String messageJson) throws Exception {
-        JsonNode message = mapper.readTree(messageJson);
-        String src = message.get("src").asText();
-        String dest = message.get("dest").asText();
-        JsonNode body = message.get("body");
-        String type = body.get("type").asText();
-        
-        if (type.equals("init")) {
-            return handleInit(src, dest, body);
-        } else if (type.equals("echo")) {
-            return handleEcho(src, dest, body);
-        } else {
-            System.err.println("Unknown message type: " + type);
-            return null;
-        }
+        // Parse the message and call the appropriate handler based on message type
+        return null;
     }
     
+    // This method handles init messages by extracting the node_id from the body, 
+    // storing it in the nodeId field, creating a response body with type "init_ok" 
+    // and in_reply_to the original message ID, and returning the response using 
+    // createResponse().
+    // 
+    // @param src The source node ID
+    // @param dest The destination node ID
+    // @param body The message body as a JsonNode
+    // @return The response string
+    // @throws Exception If an error occurs during message handling
     private String handleInit(String src, String dest, JsonNode body) throws Exception {
-        nodeId = body.get("node_id").asText();
-        System.err.println("Node " + nodeId + " initialized");
-        
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "init_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        
-        return createResponse(src, responseBody);
+        // Store the node ID and return an init_ok response
+        return null;
     }
     
+    // This method handles echo messages by creating a response body with type 
+    // "echo_ok", in_reply_to the original message ID, and echo the same value 
+    // from the request's echo field, and returning the response using createResponse().
+    // 
+    // @param src The source node ID
+    // @param dest The destination node ID
+    // @param body The message body as a JsonNode
+    // @return The response string
+    // @throws Exception If an error occurs during message handling
     private String handleEcho(String src, String dest, JsonNode body) throws Exception {
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "echo_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        responseBody.set("echo", body.get("echo"));
-        
-        return createResponse(src, responseBody);
+        // Create and return an echo_ok response with the echo field from the request
+        return null;
     }
     
+    // TODO: Implement the response creation helper method
+    // This method should:
+    // 1. Create a new ObjectNode for the response
+    // 2. Set "src" to this node's ID (nodeId)
+    // 3. Set "dest" to the destination node (the original sender)
+    // 4. Set "body" to the provided body ObjectNode
+    // 5. Convert the entire response to a JSON string
+    // Expected format:
+    // {
+    //   "src": "n1",        // Our node ID
+    //   "dest": "c1",       // The destination (original sender)
+    //   "body": {           // The body object passed to this method
+    //     ...response body fields...
+    //   }
+    // }
     private String createResponse(String dest, ObjectNode body) throws Exception {
-        ObjectNode response = mapper.createObjectNode();
-        response.put("src", nodeId);
-        response.put("dest", dest);
-        response.set("body", body);
-        
-        return mapper.writeValueAsString(response);
+        // Create a response with the proper src, dest, and body
+        return null;
     }
 }

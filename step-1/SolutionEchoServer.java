@@ -7,10 +7,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Scanner;
 
-public class UniqueId {
+/**
+ * Solution implementation for the echo server challenge.
+ * This file contains the complete implementation that properly handles
+ * both init and echo message types.
+ */
+public class SolutionEchoServer {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
-        UniqueIdServer server = new UniqueIdServer();
+        EchoServerSolution server = new EchoServerSolution();
         
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -26,10 +31,9 @@ public class UniqueId {
     }
 }
 
-class UniqueIdServer {
+class EchoServerSolution {
     private final ObjectMapper mapper = new ObjectMapper();
     private String nodeId;
-    // TODO: Add any instance variables needed for unique ID generation
     
     public String handleMessage(String messageJson) throws Exception {
         JsonNode message = mapper.readTree(messageJson);
@@ -40,8 +44,8 @@ class UniqueIdServer {
         
         if (type.equals("init")) {
             return handleInit(src, dest, body);
-        } else if (type.equals("generate")) {
-            return handleGenerate(src, dest, body);
+        } else if (type.equals("echo")) {
+            return handleEcho(src, dest, body);
         } else {
             System.err.println("Unknown message type: " + type);
             return null;
@@ -59,14 +63,11 @@ class UniqueIdServer {
         return createResponse(src, responseBody);
     }
     
-    // TODO: Implement the unique ID generation logic
-    private String handleGenerate(String src, String dest, JsonNode body) throws Exception {
-        // TODO: Generate a globally unique ID
-        
+    private String handleEcho(String src, String dest, JsonNode body) throws Exception {
         ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "generate_ok");
+        responseBody.put("type", "echo_ok");
         responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        responseBody.put("id", "placeholder-id");  // Replace with your unique ID implementation
+        responseBody.set("echo", body.get("echo"));
         
         return createResponse(src, responseBody);
     }
