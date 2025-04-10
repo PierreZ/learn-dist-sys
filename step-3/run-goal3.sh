@@ -29,4 +29,5 @@ jbang build "$JAVA_FILE"
   --rate 10 \
   --topology "$TOPOLOGY" \
   --latency "$LATENCY" \
+  --log-stderr \
   --nemesis partition

@@ -12,4 +12,4 @@ chmod +x "$JAVA_FILE"
 jbang build "$JAVA_FILE"
 
 # Run the test with Maelstrom
-../bin/maelstrom test -w unique-ids --bin "./$JAVA_FILE" --time-limit 5 --node-count 3 --availability total --nemesis partition
+../bin/maelstrom test -w unique-ids --bin "./$JAVA_FILE" --time-limit 5 --node-count 3 --availability total --nemesis partition --log-stderr

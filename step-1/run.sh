@@ -12,4 +12,4 @@ chmod +x "$JAVA_FILE"
 jbang build "$JAVA_FILE"
 
 # Run the test with Maelstrom
-../bin/maelstrom test -w echo --bin "./$JAVA_FILE" --node-count 1 --time-limit 10
+../bin/maelstrom test -w echo --bin "./$JAVA_FILE" --node-count 1 --time-limit 10 --log-stderr

@@ -22,4 +22,5 @@ jbang build "$JAVA_FILE"
   --time-limit 20 \
   --rate 10 \
   --topology "grid" \
-  --latency 0
+  --latency 0 \
+  --log-stderr
