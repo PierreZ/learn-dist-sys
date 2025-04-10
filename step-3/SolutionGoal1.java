@@ -12,11 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * Solution implementation for the broadcast service that avoids message amplification.
- * This implementation tracks which messages have been seen and only forwards new ones.
- */
-public class SolutionBroadcast {
+public class SolutionGoal1 {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         BroadcastServer server = new BroadcastServer();
@@ -85,21 +81,28 @@ class BroadcastServer {
         // Get the message value
         int message = body.get("message").asInt();
         
-        // Check if we've already seen this message
+        // Check if we've seen this message before
         if (!messages.contains(message)) {
-            // Add to our set of received messages
+            // This is a new message, add it to our set of received messages
             messages.add(message);
             
             // Forward this message to all other nodes (with deduplication)
             broadcastToAll(message);
+        } else {
+            // We've already seen this message, no need to forward it
+            System.err.println("Node " + nodeId + " already seen message: " + message);
         }
         
-        // Send back acknowledgment
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "broadcast_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
+        // Send back acknowledgment only if the source is a client
+        if (src.startsWith("c")) {
+            ObjectNode responseBody = mapper.createObjectNode();
+            responseBody.put("type", "broadcast_ok");
+            responseBody.put("in_reply_to", body.get("msg_id").asInt());
+            
+            return createResponse(src, responseBody);
+        }
         
-        return createResponse(src, responseBody);
+        return null;
     }
     
     private void broadcastToAll(int message) throws Exception {

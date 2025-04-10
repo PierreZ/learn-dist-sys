@@ -90,6 +90,46 @@ For the broadcast workload, our nodes will handle the following message types:
    }
    ```
 
+## Implementation Details
+
+We've provided a skeleton implementation in the `Broadcast.java` file. The file includes:
+- The basic setup for reading from stdin and writing to stdout
+- A `BroadcastServer` class with handlers for all message types
+- A naive implementation of broadcast that forwards messages to all nodes
+
+Your task is to improve this implementation in several stages to address the challenges mentioned above.
+
+## Testing Your Implementation
+
+For each goal, we've provided a dedicated run script:
+
+### Goal 1: Testing Basic Broadcast
+To test your solution for avoiding message amplification:
+
+```bash
+./run-goal1.sh
+```
+
+This script runs a basic test with a grid topology and no network latency.
+
+### Goal 2: Testing Latency Optimization
+To test your solution for reducing broadcast latency using network topology:
+
+```bash
+./run-goal2.sh
+```
+
+This script uses a tree topology with simulated network latency to test how well your implementation optimizes message propagation.
+
+### Goal 3: Testing Partition Tolerance
+To test your solution for handling network partitions:
+
+```bash
+./run-goal3.sh
+```
+
+This script introduces network partitions to test how well your implementation handles and recovers from network failures.
+
 ## Goal 1: Avoiding Message Amplification
 
 ### The Problem with Naive Broadcasting
@@ -116,6 +156,21 @@ However, this approach causes a serious problem called **message amplification**
 
 For a single broadcast in a system with N nodes, we end up sending N(N-1) messages! This quickly becomes unsustainable as the system grows.
 
+### Running the Naive Implementation to Observe Message Amplification
+
+To see this problem in action, run the naive implementation with:
+
+```bash
+./run-goal1.sh
+```
+
+Watch the output closely - you'll see a flood of messages being exchanged between nodes. Pay attention to:
+- How many times the same message is sent across the network
+- How messages continually bounce between nodes
+- The exponential growth in network traffic even with just a few nodes
+
+This visualization of message amplification helps you understand why we need a better approach for broadcasting.
+
 ### Implementing a Better Solution
 
 To avoid message amplification, we need to track which messages we've already seen and only forward new ones. This is known as a "flooding" algorithm with deduplication:
@@ -128,14 +183,13 @@ Implement this solution by:
 1. Tracking which messages each node has seen
 2. Only forwarding messages that haven't been seen before
 
-## Implementation Details
+Once you've implemented your solution, run it with:
 
-We've provided a skeleton implementation in the `Broadcast.java` file. The file includes:
-- The basic setup for reading from stdin and writing to stdout
-- A `BroadcastServer` class with handlers for all message types
-- A naive implementation of broadcast that forwards messages to all nodes
+```bash
+./run-goal1.sh
+```
 
-Your task is to improve this implementation in several stages to address the challenges mentioned above.
+Compare the message flow with the naive implementation - you should see a dramatic reduction in network traffic.
 
 ## Goal 2: Improving Latency
 
@@ -237,37 +291,6 @@ To handle network partitions effectively, we need several mechanisms:
 #### 4. Conflict Resolution
 - When partitions heal, nodes may have inconsistent state
 - Implement a strategy to reconcile differences
-
-## Testing Your Implementation
-
-For each goal, we've provided a dedicated run script:
-
-### Goal 1: Testing Basic Broadcast
-To test your solution for avoiding message amplification:
-
-```bash
-./run-goal1.sh
-```
-
-This script runs a basic test with a grid topology and no network latency.
-
-### Goal 2: Testing Latency Optimization
-To test your solution for reducing broadcast latency using network topology:
-
-```bash
-./run-goal2.sh
-```
-
-This script uses a tree topology with simulated network latency to test how well your implementation optimizes message propagation.
-
-### Goal 3: Testing Partition Tolerance
-To test your solution for handling network partitions:
-
-```bash
-./run-goal3.sh
-```
-
-This script enables the partition nemesis in Maelstrom to simulate network partitions during the test.
 
 ## Viewing Test Results
 

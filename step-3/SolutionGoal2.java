@@ -11,8 +11,15 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
-public class Broadcast {
+/**
+ * Solution implementation for the broadcast service that improves latency
+ * by using the network topology information to create a more efficient
+ * message propagation pattern.
+ */
+public class SolutionGoal2 {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         BroadcastServer server = new BroadcastServer();
@@ -37,6 +44,10 @@ class BroadcastServer {
     private List<String> nodeIds;
     private Set<Integer> messages = new HashSet<>();
     private int nextMsgId = 0;
+    
+    // Topology information - each node ID maps to list of neighbors
+    private Map<String, List<String>> topology = new HashMap<>();
+    private List<String> neighbors = new ArrayList<>();
     
     public String handleMessage(String messageJson) throws Exception {
         JsonNode message = mapper.readTree(messageJson);
@@ -81,26 +92,39 @@ class BroadcastServer {
         // Get the message value
         int message = body.get("message").asInt();
         
-        // Add to our set of received messages
-        messages.add(message);
+        // Check if we've already seen this message
+        if (!messages.contains(message)) {
+            // Add to our set of received messages
+            messages.add(message);
+            
+            // Forward this message to neighbors according to topology
+            broadcastToNeighbors(message);
+        }
         
-        // Forward this message to all other nodes (naive flooding approach)
-        broadcastToAll(message);
+        // Send back acknowledgment only if the source is a client
+        if (src.startsWith("c")) {
+            ObjectNode responseBody = mapper.createObjectNode();
+            responseBody.put("type", "broadcast_ok");
+            responseBody.put("in_reply_to", body.get("msg_id").asInt());
+            
+            return createResponse(src, responseBody);
+        }
         
-        // Send back acknowledgment
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "broadcast_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        
-        return createResponse(src, responseBody);
+        return null;
     }
     
-    private void broadcastToAll(int message) throws Exception {
-        // TODO: This is a naive approach that causes message amplification
-        // Send to all other nodes
-        for (String node : nodeIds) {
-            if (!node.equals(nodeId)) {
+    private void broadcastToNeighbors(int message) throws Exception {
+        // If we have topology information, use it to broadcast to neighbors only
+        if (!neighbors.isEmpty()) {
+            for (String node : neighbors) {
                 sendBroadcast(node, message);
+            }
+        } else {
+            // Fallback to broadcasting to all nodes if no topology is defined
+            for (String node : nodeIds) {
+                if (!node.equals(nodeId)) {
+                    sendBroadcast(node, message);
+                }
             }
         }
     }
@@ -129,8 +153,30 @@ class BroadcastServer {
     }
     
     private String handleTopology(String src, String dest, JsonNode body) throws Exception {
-        // For now, we just acknowledge the topology but don't use it
-        // We'll use this in more advanced implementations
+        // Store the topology information
+        JsonNode topologyNode = body.get("topology");
+        
+        topology.clear();
+        neighbors.clear();
+        
+        // Parse the topology
+        topologyNode.fields().forEachRemaining(entry -> {
+            String node = entry.getKey();
+            List<String> nodeNeighbors = new ArrayList<>();
+            for (JsonNode n : entry.getValue()) {
+                nodeNeighbors.add(n.asText());
+            }
+            topology.put(node, nodeNeighbors);
+            
+            // Store our own neighbors
+            if (node.equals(nodeId)) {
+                neighbors.addAll(nodeNeighbors);
+            }
+        });
+        
+        System.err.println("Node " + nodeId + " received topology: " + topology);
+        System.err.println("Node " + nodeId + " neighbors: " + neighbors);
+        
         ObjectNode responseBody = mapper.createObjectNode();
         responseBody.put("type", "topology_ok");
         responseBody.put("in_reply_to", body.get("msg_id").asInt());
