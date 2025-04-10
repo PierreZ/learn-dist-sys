@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Scanner;
 
-public class NaiveUniqueId {
+public class SolutionNaiveUniqueIds {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         NaiveUniqueIdServer server = new NaiveUniqueIdServer();

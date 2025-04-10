@@ -14,6 +14,22 @@ Broadcasting in a distributed system means ensuring that a message sent by one n
 2. **Latency**: How quickly can a message reach all nodes in the system
 3. **Network Partitions**: What happens when parts of the network can't communicate with each other
 
+## Getting Started
+
+To help you tackle this challenge step-by-step, we've provided three script files:
+
+- `run-goal1.sh`: Tests your solution for Goal 1 (message deduplication)
+- `run-goal2.sh`: Tests your solution for Goal 2 (latency optimization)
+- `run-goal3.sh`: Tests your solution for Goal 3 (partition tolerance)
+
+To run any test, simply execute the appropriate script:
+
+```bash
+./run-goal1.sh
+```
+
+These scripts are configured with the appropriate parameters for testing each specific goal.
+
 ## The Broadcast Workload
 
 For the broadcast workload, our nodes will handle the following message types:
@@ -74,15 +90,6 @@ For the broadcast workload, our nodes will handle the following message types:
    }
    ```
 
-## Getting Started
-
-We've provided a skeleton implementation in the `Broadcast.java` file. The file includes:
-- The basic setup for reading from stdin and writing to stdout
-- A `BroadcastServer` class with handlers for all message types
-- A naive implementation of broadcast that forwards messages to all nodes
-
-Your task is to improve this implementation in several stages to address the challenges mentioned above.
-
 ## Goal 1: Avoiding Message Amplification
 
 ### The Problem with Naive Broadcasting
@@ -121,22 +128,150 @@ Implement this solution by:
 1. Tracking which messages each node has seen
 2. Only forwarding messages that haven't been seen before
 
-## Running the Broadcast Test
+## Implementation Details
 
-We've provided a run script that will test your implementation with Maelstrom:
+We've provided a skeleton implementation in the `Broadcast.java` file. The file includes:
+- The basic setup for reading from stdin and writing to stdout
+- A `BroadcastServer` class with handlers for all message types
+- A naive implementation of broadcast that forwards messages to all nodes
 
-```bash
-./run.sh
+Your task is to improve this implementation in several stages to address the challenges mentioned above.
+
+## Goal 2: Improving Latency
+
+### The Problem with Latency
+
+Even after solving the message amplification problem, we still face another challenge: **latency**. In large distributed systems, messages may need to travel through many nodes to reach all parts of the network.
+
+The time it takes for a message to propagate to all nodes is crucial for applications that require quick updates across the system. This becomes especially important as the number of nodes grows.
+
+### Using Topology Information
+
+Maelstrom provides topology information through the `topology` message, which tells each node who its neighbors are. For example:
+
+```json
+{
+  "type": "topology",
+  "topology": {
+    "n1": ["n2", "n3"],
+    "n2": ["n1"],
+    "n3": ["n1"]
+  }
+}
 ```
 
-This will execute a test with 5 nodes at a moderate message rate. The test will measure:
-- Message count (how many messages were sent/received)
-- Latency (how quickly messages propagate)
-- Correctness (whether all nodes received all messages)
+This topology indicates that node n1 is connected to n2 and n3, while n2 and n3 are only connected to n1. This forms a "star" topology with n1 at the center.
+
+By using this topology information intelligently, we can create more efficient message propagation patterns:
+
+1. Instead of each node broadcasting to all other nodes, nodes only send messages to their neighbors
+2. The topology can be designed to minimize the number of "hops" needed for a message to reach all nodes
+3. Different topologies (like trees or grids) have different latency characteristics
+
+### Testing with Different Topologies
+
+Our run script now includes variables for `TOPOLOGY` and `LATENCY` that you can modify to test different configurations:
+
+```bash
+# Change these values to test different configurations
+TOPOLOGY="tree4"
+LATENCY=100
+```
+
+The topologies available are:
+- `grid`: Nodes form a 2D grid
+- `tree2`: Nodes form a binary tree
+- `tree3`: Nodes form a tree with 3 children per node
+- `tree4`: Nodes form a tree with 4 children per node
+
+### Implementing a Low-Latency Solution
+
+To improve latency, you need to create an implementation that:
+
+1. Properly processes the topology information to identify neighbors
+2. Only forwards messages to its neighbors (instead of all nodes)
+3. Takes advantage of tree-based topologies to minimize propagation time
+
+To test different topologies, modify the run script:
+
+```bash
+# Change these values to test different configurations
+TOPOLOGY="tree4"
+LATENCY=100
+```
+
+This approach significantly reduces both the number of messages and the time required for broadcasts to reach all nodes in the network.
+
+## Goal 3: Handling Network Partitions
+
+The final challenge is to make our broadcast system resilient to **network partitions** - situations where some nodes become temporarily unable to communicate with each other.
+
+### The Challenge of Network Partitions
+
+In real distributed systems, network failures are inevitable:
+- Network connections can fail temporarily
+- Messages can be lost or delayed
+- Parts of the network can become completely isolated from others
+
+When these partitions occur, our broadcast system should:
+1. Continue functioning within each partition
+2. Eventually reach consistency when partitions heal
+3. Ensure that all messages eventually propagate to all nodes
+
+### Implementing Partition Tolerance
+
+To handle network partitions effectively, we need several mechanisms:
+
+#### 1. Message Persistence
+- Keep track of all messages that need to be delivered
+- Don't assume a message is delivered just because it was sent
+
+#### 2. Retry Logic
+- Implement a mechanism to retry failed message deliveries
+- Use an exponential backoff strategy to avoid overwhelming the network
+
+#### 3. Gossip Protocol
+- Periodically share message state with neighbors
+- This helps messages propagate even when direct paths are unavailable
+
+#### 4. Conflict Resolution
+- When partitions heal, nodes may have inconsistent state
+- Implement a strategy to reconcile differences
+
+## Testing Your Implementation
+
+For each goal, we've provided a dedicated run script:
+
+### Goal 1: Testing Basic Broadcast
+To test your solution for avoiding message amplification:
+
+```bash
+./run-goal1.sh
+```
+
+This script runs a basic test with a grid topology and no network latency.
+
+### Goal 2: Testing Latency Optimization
+To test your solution for reducing broadcast latency using network topology:
+
+```bash
+./run-goal2.sh
+```
+
+This script uses a tree topology with simulated network latency to test how well your implementation optimizes message propagation.
+
+### Goal 3: Testing Partition Tolerance
+To test your solution for handling network partitions:
+
+```bash
+./run-goal3.sh
+```
+
+This script enables the partition nemesis in Maelstrom to simulate network partitions during the test.
 
 ## Viewing Test Results
 
-After running the test, you can visualize the results using:
+After running any of the tests, you can visualize the results using:
 
 ```bash
 ../bin/maelstrom serve
@@ -149,14 +284,15 @@ Then open a web browser to http://localhost:8080 and examine:
 
 In the naive implementation, you'll see an explosion of messages as each broadcast propagates through the network. Compare this with your improved implementation, which should show a dramatic reduction in message count.
 
-## Goal 2: Improving Latency
+## Conclusion
 
-After solving the message amplification problem, we'll tackle latency in a future implementation. The goal will be to reduce the time it takes for a message to reach all nodes in the system.
+By completing these three goals, you've built a robust broadcast system that:
+1. Avoids message amplification through careful message tracking
+2. Minimizes latency by leveraging network topology
+3. Handles network partitions to ensure eventual consistency
 
-## Goal 3: Handling Network Partitions
-
-The final challenge will be to make our broadcast system resilient to network partitions, where parts of the network can't communicate with each other.
+These concepts are fundamental to building reliable distributed systems in real-world environments.
 
 ## Next Steps
 
-Once you've implemented and tested your solution for Goal 1, you'll move on to Goals 2 and 3 with more advanced broadcast implementations.
+After completing this step, you'll be ready to tackle more complex distributed systems challenges in the subsequent steps, building on the foundational principles you've learned here.

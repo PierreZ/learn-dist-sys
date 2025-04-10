@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -ex
 
-# Java file to run - change this to test different implementations
-JAVA_FILE="Echo.java"
+# Java file to run - can be overridden with environment variable
+# Default implementation if not set
+: ${JAVA_FILE:="Echo.java"}
 
 # Make sure the file is executable
 chmod +x "$JAVA_FILE"
@@ -11,4 +12,4 @@ chmod +x "$JAVA_FILE"
 jbang build "$JAVA_FILE"
 
 # Run the test with Maelstrom
-../bin/maelstrom test -w echo --bin "./$JAVA_FILE" --time-limit 10 --node-count 1
+../bin/maelstrom test -w echo --bin "./$JAVA_FILE" --node-count 1 --time-limit 10

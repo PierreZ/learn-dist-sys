@@ -1,0 +1,41 @@
+name: Test Solutions
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  test-solutions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '23'
+          distribution: 'temurin'
+      - name: Install JBang
+        run: |
+          curl -Ls https://sh.jbang.dev | bash -s - app setup
+          echo "$HOME/.jbang/bin" >> $GITHUB_PATH
+      - name: Install Maelstrom Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnuplot graphviz
+      - name: Run setup.sh to download Maelstrom
+        run: |
+          chmod +x setup.sh
+          ./setup.sh
+      - name: Test Echo Server (Step 1)
+        run: cd step-1 && JAVA_FILE="SolutionEchoServer.java" ./run.sh
+      - name: Test Unique IDs (Step 2)
+        run: cd step-2 && JAVA_FILE="SolutionUniqueIds.java" ./run.sh
+      - name: Test Broadcast Goal 1 (Step 3)
+        run: cd step-3 && JAVA_FILE="SolutionBroadcast.java" ./run-goal1.sh
+      - name: Test Broadcast Goal 2 (Step 3)
+        run: cd step-3 && JAVA_FILE="SolutionBroadcastLowLatency.java" ./run-goal2.sh
+      - name: Test Broadcast Goal 3 (Step 3)
+        run: cd step-3 && JAVA_FILE="SolutionBroadcastPartition.java" ./run-goal3.sh

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -ex
 
-# Java file to run - change this to test different implementations
-JAVA_FILE="UniqueId.java"
+# Java file to run - can be overridden with environment variable
+# Default implementation if not set
+: ${JAVA_FILE:="UniqueId.java"}
 
 # Make sure the file is executable
 chmod +x "$JAVA_FILE"
