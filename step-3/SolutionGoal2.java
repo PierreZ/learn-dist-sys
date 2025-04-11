@@ -15,9 +15,16 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * Solution implementation for the broadcast service that improves latency
- * by using the network topology information to create a more efficient
- * message propagation pattern.
+ * SolutionGoal2 - Broadcast System with Latency Optimization
+ * 
+ * This solution addresses the second goal of the broadcast challenge:
+ * optimizing latency by using network topology information to create a more
+ * efficient message propagation pattern.
+ * 
+ * Key Concept: Rather than naively broadcasting to all nodes,
+ * this implementation only forwards messages to direct neighbors
+ * based on the topology provided. This reduces the number of hops
+ * a message needs to take to reach all nodes in the network.
  */
 public class SolutionGoal2 {
     public static void main(String[] args) throws Exception {
@@ -38,6 +45,12 @@ public class SolutionGoal2 {
     }
 }
 
+/**
+ * Implementation of a broadcast server that optimizes message propagation using topology information.
+ * 
+ * This class extends the basic functionality from Goal 1 (message deduplication)
+ * by also tracking the network topology and only forwarding messages to direct neighbors.
+ */
 class BroadcastServer {
     private final ObjectMapper mapper = new ObjectMapper();
     private String nodeId;
@@ -47,6 +60,8 @@ class BroadcastServer {
     
     // Topology information - each node ID maps to list of neighbors
     private Map<String, List<String>> topology = new HashMap<>();
+    
+    // Direct neighbors of this node in the network topology
     private List<String> neighbors = new ArrayList<>();
     
     public String handleMessage(String messageJson) throws Exception {

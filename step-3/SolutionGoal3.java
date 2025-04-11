@@ -11,9 +11,19 @@ import java.util.concurrent.*;
 import java.time.Duration;
 
 /**
- * Solution implementation for the broadcast service that handles network partitions
- * by using reliable gossip protocol to ensure eventual consistency.
- * This implementation uses Java 23's virtual threads from Project Loom for efficient concurrency.
+ * SolutionGoal3 - Broadcast System with Partition Tolerance
+ * 
+ * This solution addresses the third goal of the broadcast challenge:
+ * ensuring reliable message delivery even during network partitions by
+ * implementing a gossip protocol.
+ * 
+ * Key Concepts:
+ * 1. Periodic Gossip - Regularly share known messages with neighbors
+ * 2. Message Tracking - Keep track of which messages need propagation
+ * 3. Failure Handling - Retry failed message deliveries
+ * 4. Concurrency - Use virtual threads for efficient background processing
+ * 
+ * This implementation uses Java 23's virtual threads for efficient concurrency.
  */
 public class SolutionGoal3 {
     public static void main(String[] args) throws Exception {
@@ -34,32 +44,41 @@ public class SolutionGoal3 {
     }
 }
 
+/**
+ * Implementation of a broadcast server with partition tolerance using gossip protocol.
+ * 
+ * This class extends the functionality from Goals 1 and 2 by adding:
+ * - Concurrent thread-safe data structures for message tracking
+ * - Background gossip process for periodic message sharing
+ * - Reliable delivery with retries for failed transmissions
+ * - Source tracking to optimize message propagation
+ */
 class BroadcastServer {
     private final ObjectMapper mapper = new ObjectMapper();
     private String nodeId;
     private List<String> nodeIds;
     
-    // Track messages we've seen with their source
+    // Thread-safe map to track messages we've seen with their source node
     private Map<Integer, String> messages = new ConcurrentHashMap<>();
     
-    // Track messages we need to propagate
+    // Thread-safe set of messages that still need to be propagated
     private Set<Integer> messagesToPropagate = ConcurrentHashMap.newKeySet();
     
-    // Track failed message deliveries for retry
+    // Thread-safe map to track failed deliveries by node for retry
     private Map<String, Set<Integer>> pendingMessages = new ConcurrentHashMap<>();
     
-    // Topology information
+    // Topology information - maps node IDs to their neighbors
     private Map<String, List<String>> topology = new ConcurrentHashMap<>();
     private List<String> neighbors = new ArrayList<>();
     
-    // Message counter for generating unique IDs
-    private int nextMsgId = 0;
-    
-    // Flag to keep track if we've started the gossip thread
+    // Flag to track if gossip process has started
     private boolean gossipStarted = false;
     
-    // Thread for virtual thread management
+    // Background thread for gossip protocol
     private Thread gossipThread;
+    
+    // Message counter for generating unique IDs
+    private int nextMsgId = 0;
     
     public BroadcastServer() {
         // Start the gossip protocol when the server is created
