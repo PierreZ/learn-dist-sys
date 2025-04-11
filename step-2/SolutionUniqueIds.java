@@ -59,6 +59,18 @@ class UniqueIdServer {
     // Counter for local sequential IDs, combined with nodeId for uniqueness
     private int lastId = 0;
     
+    /**
+     * Logs a debug message to STDERR.
+     * 
+     * IMPORTANT: Maelstrom protocol requires all debug output to go to STDERR.
+     * Never use System.out for logging as it will corrupt the message protocol.
+     * 
+     * @param message The debug message to log
+     */
+    private void debug(String message) {
+        System.err.println("[" + (nodeId != null ? nodeId : "uninit") + "] " + message);
+    }
+    
     public String handleMessage(String messageJson) throws Exception {
         JsonNode message = mapper.readTree(messageJson);
         String src = message.get("src").asText();
@@ -71,14 +83,14 @@ class UniqueIdServer {
         } else if (type.equals("generate")) {
             return handleGenerate(src, dest, body);
         } else {
-            System.err.println("Unknown message type: " + type);
+            debug("Unknown message type: " + type);
             return null;
         }
     }
     
     private String handleInit(String src, String dest, JsonNode body) throws Exception {
         nodeId = body.get("node_id").asText();
-        System.err.println("Node " + nodeId + " initialized");
+        debug("Node " + nodeId + " initialized");
         
         ObjectNode responseBody = mapper.createObjectNode();
         responseBody.put("type", "init_ok");
@@ -93,6 +105,7 @@ class UniqueIdServer {
         
         // Create a unique ID using node ID as prefix
         String uniqueId = nodeId + "-" + lastId;
+        debug("Generated unique ID: " + uniqueId);
         
         ObjectNode responseBody = mapper.createObjectNode();
         responseBody.put("type", "generate_ok");

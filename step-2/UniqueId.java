@@ -7,6 +7,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Scanner;
 
+/**
+ * Unique ID Generator implementation for Maelstrom.
+ * 
+ * This implementation should generate globally unique IDs across all nodes
+ * in the distributed system, even during network partitions.
+ * 
+ * Remember:
+ * - All messages to Maelstrom must be sent to STDOUT
+ * - All debug logging must be sent to STDERR
+ * - Never mix protocol messages and debug output on the same stream
+ */
 public class UniqueId {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
@@ -31,6 +42,18 @@ class UniqueIdServer {
     private String nodeId;
     // TODO: Add any instance variables needed for unique ID generation
     
+    /**
+     * Logs a debug message to STDERR.
+     * 
+     * IMPORTANT: Maelstrom protocol requires all debug output to go to STDERR.
+     * Never use System.out for logging as it will corrupt the message protocol.
+     * 
+     * @param message The debug message to log
+     */
+    private void debug(String message) {
+        System.err.println("[" + (nodeId != null ? nodeId : "uninit") + "] " + message);
+    }
+    
     public String handleMessage(String messageJson) throws Exception {
         JsonNode message = mapper.readTree(messageJson);
         String src = message.get("src").asText();
@@ -50,7 +73,7 @@ class UniqueIdServer {
     
     private String handleInit(String src, String dest, JsonNode body) throws Exception {
         nodeId = body.get("node_id").asText();
-        System.err.println("Node " + nodeId + " initialized");
+        debug("Node " + nodeId + " initialized");
         
         ObjectNode responseBody = mapper.createObjectNode();
         responseBody.put("type", "init_ok");

@@ -176,6 +176,37 @@ String jsonResponse = mapper.writeValueAsString(responseBody);
 
 This pattern of parsing, processing, and generating JSON will be common across all the examples in this lab.
 
+## Logging Best Practices
+
+When implementing distributed systems with Maelstrom, proper logging is crucial for debugging and understanding system behavior. Follow these guidelines:
+
+1. **Use STDERR for all logging**: Maelstrom expects messages on STDOUT and debugging on STDERR
+   ```java
+   // Correct way to log debug information
+   System.err.println("Processing message: " + messageType);
+   
+   // INCORRECT - never do this as it will corrupt the protocol
+   // System.out.println("Debug info");
+   ```
+
+2. **Log initialization**: Always log when your node is initialized with its ID
+   ```java
+   nodeId = body.get("node_id").asText();
+   System.err.println("Node " + nodeId + " initialized");
+   ```
+
+3. **Log important state changes**: Log when significant events occur
+   ```java
+   System.err.println("Received message " + messageId + " of type " + messageType);
+   ```
+
+4. **View logs in Maelstrom's store**: After running tests, you can find logs at:
+   ```
+   /tmp/maelstrom-store/<test-name>/node-logs/
+   ```
+
+Remember, any output to STDOUT that is not a correctly formatted message will break the Maelstrom protocol and cause your tests to fail.
+
 ## Getting Started
 
 We've provided a boilerplate implementation in the `Echo.java` file to help you get started. The file includes:

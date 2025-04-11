@@ -7,6 +7,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Scanner;
 
+/**
+ * Echo - Simple Maelstrom node that echoes back received messages
+ * 
+ * This implementation demonstrates the basics of the Maelstrom protocol,
+ * including message handling and the request-response pattern.
+ * 
+ * Remember:
+ * - All messages to Maelstrom must be sent to STDOUT
+ * - All debug logging must be sent to STDERR
+ * - Never mix protocol messages and debug output on the same stream
+ */
 public class Echo {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
@@ -29,6 +40,18 @@ public class Echo {
 class EchoServer {
     private final ObjectMapper mapper = new ObjectMapper();
     private String nodeId;
+    
+    /**
+     * Logs a debug message to STDERR.
+     * 
+     * IMPORTANT: Maelstrom protocol requires all debug output to go to STDERR.
+     * Never use System.out for logging as it will corrupt the message protocol.
+     * 
+     * @param message The debug message to log
+     */
+    private void debug(String message) {
+        System.err.println("[" + (nodeId != null ? nodeId : "uninit") + "] " + message);
+    }
     
     // This method processes incoming messages by parsing the JSON string, 
     // extracting the src, dest, body, and message type, and calling the 

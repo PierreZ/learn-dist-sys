@@ -57,7 +57,19 @@ class NaiveUniqueIdServer {
     
     // Simple counter that starts at 0 - this is the root of the problem
     // as all nodes will have their own counters starting at 0
-    private int counter = 0;  // Simple counter for IDs
+    private int counter = 0;
+    
+    /**
+     * Logs a debug message to STDERR.
+     * 
+     * IMPORTANT: Maelstrom protocol requires all debug output to go to STDERR.
+     * Never use System.out for logging as it will corrupt the message protocol.
+     * 
+     * @param message The debug message to log
+     */
+    private void debug(String message) {
+        System.err.println("[" + (nodeId != null ? nodeId : "uninit") + "] " + message);
+    }
     
     public String handleMessage(String messageJson) throws Exception {
         JsonNode message = mapper.readTree(messageJson);
@@ -71,14 +83,14 @@ class NaiveUniqueIdServer {
         } else if (type.equals("generate")) {
             return handleGenerate(src, dest, body);
         } else {
-            System.err.println("Unknown message type: " + type);
+            debug("Unknown message type: " + type);
             return null;
         }
     }
     
     private String handleInit(String src, String dest, JsonNode body) throws Exception {
         nodeId = body.get("node_id").asText();
-        System.err.println("Node " + nodeId + " initialized");
+        debug("Node " + nodeId + " initialized");
         
         ObjectNode responseBody = mapper.createObjectNode();
         responseBody.put("type", "init_ok");
@@ -88,11 +100,10 @@ class NaiveUniqueIdServer {
     }
     
     private String handleGenerate(String src, String dest, JsonNode body) throws Exception {
-        // Increment the counter for each request
+        // Increment the counter for each request - this is naive approach
         counter++;
-        
-        // Use the counter as the ID without node ID prefix
         String id = String.valueOf(counter);
+        debug("Generated ID: " + id + " (WARNING: This may conflict with IDs from other nodes!)");
         
         ObjectNode responseBody = mapper.createObjectNode();
         responseBody.put("type", "generate_ok");
