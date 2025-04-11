@@ -12,6 +12,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+ * Broadcast - Distributed Broadcast System
+ * 
+ * This implementation demonstrates a broadcast system where nodes can:
+ * 1. Broadcast messages to all nodes in the network
+ * 2. Read all messages that have been broadcast
+ * 3. Handle network topology information
+ * 
+ * Remember:
+ * - All messages to Maelstrom must be sent to STDOUT
+ * - All debug logging must be sent to STDERR
+ * - Never mix protocol messages and debug output on the same stream
+ */
 public class Broadcast {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
@@ -31,12 +44,34 @@ public class Broadcast {
     }
 }
 
+/**
+ * Server implementation for a distributed broadcast system.
+ * 
+ * This class needs to handle:
+ * - Initialization and topology messages from Maelstrom
+ * - Broadcast messages from clients (storing them locally and propagating to other nodes)
+ * - Read requests to return all known messages
+ * 
+ * Challenge: Implement a solution that works even when the network is partitioned.
+ */
 class BroadcastServer {
     private final ObjectMapper mapper = new ObjectMapper();
     private String nodeId;
     private List<String> nodeIds;
     private Set<Integer> messages = new HashSet<>();
     private int nextMsgId = 0;
+    
+    /**
+     * Logs a debug message to STDERR.
+     * 
+     * IMPORTANT: Maelstrom protocol requires all debug output to go to STDERR.
+     * Never use System.out for logging as it will corrupt the message protocol.
+     * 
+     * @param message The debug message to log
+     */
+    private void debug(String message) {
+        System.err.println("[" + (nodeId != null ? nodeId : "uninit") + "] " + message);
+    }
     
     public String handleMessage(String messageJson) throws Exception {
         JsonNode message = mapper.readTree(messageJson);

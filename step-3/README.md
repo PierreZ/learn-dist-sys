@@ -14,6 +14,131 @@ Broadcasting in a distributed system means ensuring that a message sent by one n
 2. **Latency**: How quickly can a message reach all nodes in the system
 3. **Network Partitions**: What happens when parts of the network can't communicate with each other
 
+## Message Exchange Pattern
+
+```
+Message Flow:
+-------------
+1. Init:
+   Client ----[init]----> Broadcast Node
+   Broadcast Node ----[init_ok]----> Client
+
+2. Topology:
+   Client ----[topology]----> Broadcast Node
+   Broadcast Node ----[topology_ok]----> Client
+
+3. Broadcast:
+   Client ----[broadcast, 1000]----> Node n1
+   Node n1 ----[broadcast_ok]----> Client
+   
+   Node n1 ----[broadcast, 1000]----> Node n2
+   Node n1 ----[broadcast, 1000]----> Node n3
+   
+4. Read:
+   Client ----[read]----> Broadcast Node
+   Broadcast Node ----[read_ok, [1000, ...]]----> Client
+```
+
+## JSON Exchange Examples
+
+Here are the complete JSON messages exchanged in the broadcast workload:
+
+1. **Client Broadcast Request**:
+```json
+{
+  "src": "c1",
+  "dest": "n1",
+  "body": {
+    "type": "broadcast",
+    "msg_id": 1,
+    "message": 1000
+  }
+}
+```
+
+2. **Node Response to Broadcast**:
+```json
+{
+  "src": "n1",
+  "dest": "c1",
+  "body": {
+    "type": "broadcast_ok",
+    "msg_id": 2,
+    "in_reply_to": 1
+  }
+}
+```
+
+3. **Node-to-Node Broadcast Message**:
+```json
+{
+  "src": "n1",
+  "dest": "n2",
+  "body": {
+    "type": "broadcast",
+    "message": 1000
+  }
+}
+```
+
+4. **Client Read Request**:
+```json
+{
+  "src": "c1",
+  "dest": "n1",
+  "body": {
+    "type": "read",
+    "msg_id": 3
+  }
+}
+```
+
+5. **Node Response to Read**:
+```json
+{
+  "src": "n1",
+  "dest": "c1",
+  "body": {
+    "type": "read_ok",
+    "msg_id": 4,
+    "in_reply_to": 3,
+    "messages": [1000, 2000, 3000]
+  }
+}
+```
+
+6. **Topology Message**:
+```json
+{
+  "src": "c1",
+  "dest": "n1",
+  "body": {
+    "type": "topology",
+    "msg_id": 5,
+    "topology": {
+      "n1": ["n2", "n3"],
+      "n2": ["n1"],
+      "n3": ["n1"]
+    }
+  }
+}
+```
+
+7. **Topology Response**:
+```json
+{
+  "src": "n1",
+  "dest": "c1",
+  "body": {
+    "type": "topology_ok",
+    "msg_id": 6,
+    "in_reply_to": 5
+  }
+}
+```
+
+For the complete Maelstrom protocol documentation, please refer to the [official Maelstrom protocol documentation](https://github.com/jepsen-io/maelstrom/blob/main/doc/protocol.md).
+
 ## Getting Started
 
 To help you tackle this challenge step-by-step, we've provided three script files:

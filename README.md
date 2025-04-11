@@ -6,28 +6,6 @@ Learn distributed systems using Maelstrom from Jepsen
 - https://github.com/jepsen-io/maelstrom/tree/main
 - https://fly.io/dist-sys/
 
-## Requirements
-
-To work through this lab, you'll need:
-
-- JDK 23 or higher
-- JBang
-- Graphviz (required by Maelstrom for visualizations)
-- Gnuplot (required by Maelstrom for plots)
-
-## Setup
-
-Run the setup script to download and install Maelstrom and verify required dependencies:
-
-```bash
-./setup.sh
-```
-
-This script will:
-1. Download and extract Maelstrom to the `bin` directory
-2. Make the Maelstrom executable
-3. Check if required dependencies are installed
-
 ## Lab Structure
 
 This lab is organized into steps of increasing complexity:
