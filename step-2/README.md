@@ -9,6 +9,52 @@ Generating unique IDs in a distributed system can be challenging because:
 2. IDs must never collide, even when nodes don't communicate
 3. The system must remain available even during network partitions
 
+## Message Exchange Pattern
+
+```
+Message Flow:
+-------------
+1. Init:
+   Maelstrom ----[init]----> Unique ID Nodes
+   Unique ID Nodes ----[init_ok]----> Maelstrom
+
+2. Generate (with naive approach):
+   Client ----[generate]----> Node n1
+   Node n1 ----[generate_ok, "5"]----> Client
+```
+
+## JSON Exchange Examples
+
+Here are the complete JSON messages exchanged in the unique ID workload:
+
+1. **Client Request for ID Generation**:
+```json
+{
+  "src": "c1",
+  "dest": "n1",
+  "body": {
+    "type": "generate",
+    "msg_id": 1
+  }
+}
+```
+
+2. **Node Response with Generated ID**:
+```json
+{
+  "src": "n1",
+  "dest": "c1",
+  "body": {
+    "type": "generate_ok",
+    "msg_id": 2,
+    "in_reply_to": 1,
+    "id": 42
+  }
+}
+```
+
+For the complete Maelstrom protocol documentation, please refer to the [official Maelstrom protocol documentation](https://github.com/jepsen-io/maelstrom/blob/main/doc/protocol.md).
+
 ## The Unique ID Workload
 
 For the unique ID workload, our nodes will handle the following message types:

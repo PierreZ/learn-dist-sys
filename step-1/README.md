@@ -24,6 +24,65 @@ Each message has the following format:
 }
 ```
 
+## Message Exchange Pattern
+
+```
+Message Flow:
+-------------
+1. Init:
+   Client/Maelstrom ----[init]----> Echo Node
+   Echo Node ----[init_ok]----> Client/Maelstrom
+
+2. Echo:
+   Client ----[echo, "hello"]----> Echo Node
+   Echo Node ----[echo_ok, "hello"]----> Client
+```
+
+## Client-Response Communication
+
+The echo server in this step demonstrates the basic client-response communication pattern used throughout Maelstrom:
+
+```
+    Client c1                     Server n1
+       |                             |
+       |        Request Message      |
+       | -------------------------> |
+       |   {                         |
+       |     "src": "c1",            |
+       |     "dest": "n1",           |
+       |     "body": {               |
+       |       "type": "echo",       |
+       |       "msg_id": 123,        |
+       |       "echo": "hello"       |
+       |     }                       |
+       |   }                         |
+       |                             |
+       |                             | [Processing]
+       |                             |
+       |        Response Message     |
+       | <-------------------------- |
+       |   {                         |
+       |     "src": "n1",            |
+       |     "dest": "c1",           |
+       |     "body": {               |
+       |       "type": "echo_ok",    |
+       |       "msg_id": 456,        |
+       |       "in_reply_to": 123,   |
+       |       "echo": "hello"       |
+       |     }                       |
+       |   }                         |
+```
+
+The key elements of this communication pattern are:
+
+1. **Request-Response**: The client sends a request (e.g., "echo") and expects a response
+2. **Message IDs**: Each message has a unique `msg_id` for tracking purposes
+3. **Reply Correlation**: The response includes an `in_reply_to` field matching the original request's `msg_id`
+4. **Message Types**: Request types typically have corresponding "_ok" response types (e.g., "echo" → "echo_ok")
+5. **Message Structure**: Both requests and responses follow the same outer structure with `src`, `dest`, and `body`
+
+This pattern is consistent across all Maelstrom workloads, allowing for a standardized way to handle distributed system communications.
+
 For request-response patterns, responses include an `in_reply_to` field in the body:
 
 ```json
@@ -68,6 +127,8 @@ For the echo workload, our node needs to handle two types of messages:
      }
    }
    ```
+
+For the complete Maelstrom protocol documentation, please refer to the [official Maelstrom protocol documentation](https://github.com/jepsen-io/maelstrom/blob/main/doc/protocol.md).
 
 ## Understanding Jackson for JSON Processing
 
@@ -114,6 +175,37 @@ String jsonResponse = mapper.writeValueAsString(responseBody);
 ```
 
 This pattern of parsing, processing, and generating JSON will be common across all the examples in this lab.
+
+## Logging Best Practices
+
+When implementing distributed systems with Maelstrom, proper logging is crucial for debugging and understanding system behavior. Follow these guidelines:
+
+1. **Use STDERR for all logging**: Maelstrom expects messages on STDOUT and debugging on STDERR
+   ```java
+   // Correct way to log debug information
+   System.err.println("Processing message: " + messageType);
+   
+   // INCORRECT - never do this as it will corrupt the protocol
+   // System.out.println("Debug info");
+   ```
+
+2. **Log initialization**: Always log when your node is initialized with its ID
+   ```java
+   nodeId = body.get("node_id").asText();
+   System.err.println("Node " + nodeId + " initialized");
+   ```
+
+3. **Log important state changes**: Log when significant events occur
+   ```java
+   System.err.println("Received message " + messageId + " of type " + messageType);
+   ```
+
+4. **View logs in Maelstrom's store**: After running tests, you can find logs at:
+   ```
+   /tmp/maelstrom-store/<test-name>/node-logs/
+   ```
+
+Remember, any output to STDOUT that is not a correctly formatted message will break the Maelstrom protocol and cause your tests to fail.
 
 ## Getting Started
 
