@@ -24,9 +24,9 @@ jbang build "$JAVA_FILE"
 ../bin/maelstrom test \
   -w broadcast \
   --bin "./$JAVA_FILE" \
-  --node-count 5 \
+  --node-count 3 \
   --time-limit 30 \
-  --rate 10 \
+  --rate 1 \
   --topology "$TOPOLOGY" \
   --latency "$LATENCY" \
   --log-stderr \

@@ -144,6 +144,39 @@ Maelstrom is specifically designed as an educational tool to help developers lea
 
 Maelstrom allows you to focus on implementing the core algorithms while it handles the testing infrastructure. You can build distributed systems in any language that can read from stdin and write to stdout since that's how Maelstrom communicates with your nodes.
 
+## Using the DevContainer
+
+This project includes a development container configuration that provides a consistent, pre-configured environment for working with the distributed systems exercises. Using the devcontainer ensures you have all the required dependencies without having to install them on your host system.
+
+### Opening the Project in VS Code with DevContainer
+
+1. Ensure you have the following prerequisites:
+   - [VS Code](https://code.visualstudio.com/) installed
+   - [Docker](https://www.docker.com/products/docker-desktop) installed and running
+   - [Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed in VS Code
+
+2. Open the project in VS Code:
+   ```bash
+   # Clone the repository if you haven't already
+   git clone https://github.com/PierreZ/learn-dist-sys.git
+   
+   # Open the project in VS Code
+   code learn-dist-sys
+   ```
+
+3. When VS Code opens, it should detect the devcontainer configuration and prompt you to "Reopen in Container". Click this button to start building and opening the devcontainer.
+
+4. If VS Code doesn't prompt you automatically, you can:
+   - Click on the green icon in the bottom-left corner of VS Code
+   - Select "Remote-Containers: Reopen in Container" from the command palette
+
+5. VS Code will build the container based on the Dockerfile, which includes:
+   - Java environment
+   - JBang for script execution
+   - Required VS Code extensions for Java development
+
+Once the container is built and running, you'll have a complete development environment with all the tools needed for these exercises.
+
 ## Preparing for Step 1
 
 In the subsequent steps, we'll build increasingly complex distributed systems using Maelstrom and JBang. We'll start with a simple echo server and work our way up to a broadcast system and eventually a distributed key-value store.
@@ -167,7 +200,7 @@ dot -V
 gnuplot --version
 
 # Check Maelstrom is installed and working
-maelstrom help
+./bin/maelstrom help
 ```
 
 Ensure all commands return valid responses before proceeding to the next steps.
@@ -203,6 +236,10 @@ class HelloWorld {
 2. Run the file with JBang:
 
 ```bash
+# Make sure you're in the step-0 directory
+cd step-0  # if you're not already in this directory
+
+# Run the example
 jbang HelloWorld.java
 ```
 
@@ -249,6 +286,14 @@ public class JsonExample {
 ```
 
 Save this as `JsonExample.java` and run it with `jbang JsonExample.java`. JBang will automatically download the Jackson dependency and run your code.
+
+```bash
+# Make sure you're in the step-0 directory
+cd step-0  # if you're not already in this directory
+
+# Run the JSON example
+jbang JsonExample.java
+```
 
 ## Why Testing Distributed Systems is Important
 

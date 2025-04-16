@@ -216,6 +216,14 @@ We've provided a boilerplate implementation in the `Echo.java` file to help you 
 - An implementation of the `init` message handler
 - TODOs where you need to implement the echo functionality
 
+### ✅ TODO: Implement the Echo Server
+
+**Your implementation tasks:**
+
+- [ ] **Create an `echo_ok` response handler** that properly responds to echo requests
+- [ ] **Pass the original echo message back** to the client in your response
+- [ ] **Include the proper `in_reply_to` field** to link your response to the request
+
 Your task is to implement the echo message handler to properly respond to echo requests from Maelstrom.
 
 If you get stuck or want to see a complete solution, you can reference the `SolutionEchoServer.java` file which contains a fully working implementation.
@@ -225,6 +233,13 @@ If you get stuck or want to see a complete solution, you can reference the `Solu
 We've provided a `run.sh` script that will build and execute the echo test with Maelstrom:
 
 ```bash
+# Make sure you're in the step-1 directory
+cd step-1  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal
+../bin/maelstrom serve
+
+# Run the echo server test
 ./run.sh
 ```
 
@@ -237,13 +252,7 @@ You should see Maelstrom's output indicating whether your test passed or failed.
 
 ## Debug Visualization
 
-If you want to visualize the message flow, you can open the visualization server:
-
-```
-../bin/maelstrom serve
-```
-
-Then open a web browser to http://localhost:8080.
+If you want to visualize the message flow, after running the test, open a web browser to http://localhost:8080.
 
 ## Next Steps
 

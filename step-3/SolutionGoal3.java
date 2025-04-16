@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
 
 /**
  * SolutionGoal3 - Partition-Tolerant Broadcast System
@@ -64,13 +66,13 @@ class BroadcastServer {
     private String nodeId;
     
     // Set of neighbors from topology information
-    private List<String> neighbors = new ArrayList<>();
+    private List<String> neighbors = Collections.synchronizedList(new ArrayList<>());
     
     // Storage for messages that have been seen by this node
-    private Set<Integer> messages = new HashSet<>();
+    private Set<Integer> messages = ConcurrentHashMap.newKeySet();
     
     // Track which messages have been sent to each neighbor
-    private Map<String, Set<Integer>> messagesSentToNeighbor = new HashMap<>();
+    private Map<String, Set<Integer>> messagesSentToNeighbor = new ConcurrentHashMap<>();
     
     // For generating message IDs
     private int nextMsgId = 0;
@@ -143,7 +145,7 @@ class BroadcastServer {
         for (JsonNode neighborNode : nodeNeighbors) {
             String neighbor = neighborNode.asText();
             neighbors.add(neighbor);
-            messagesSentToNeighbor.put(neighbor, new HashSet<>());
+            messagesSentToNeighbor.put(neighbor, ConcurrentHashMap.newKeySet());
         }
         debug("Received topology: neighbors = " + neighbors);
         
