@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # Create bin directory if it doesn't exist
 mkdir -p bin
@@ -21,6 +21,17 @@ if [ ! -f "bin/maelstrom" ]; then
 else
     echo "Maelstrom is already installed in bin/maelstrom"
 fi
+
+
+# Check for jbang and install if needed
+echo "Checking jbang..."
+if command -v jbang >/dev/null 2>&1; then
+    echo "jbang is already installed"
+else
+    echo "Installing jbang..."
+    sdk install jbang
+fi
+
 
 # Check for required dependencies
 echo "Checking dependencies..."

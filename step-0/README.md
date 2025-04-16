@@ -19,7 +19,22 @@ To work through this lab, you'll need:
 - Graphviz (required by Maelstrom for visualizations)
 - Gnuplot (required by Maelstrom for plots)
 
-### Installation Commands
+### Installation Options
+
+#### Option 1: Using Dev Containers (Recommended)
+
+The easiest way to get started is to use Dev Containers, which provides a pre-configured development environment with all the required dependencies:
+
+1. Install [Docker](https://www.docker.com/products/docker-desktop) and [Visual Studio Code](https://code.visualstudio.com/)
+2. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) in VS Code
+3. Clone this repository and open it in VS Code
+4. When prompted, click "Reopen in Container" or run the "Dev Containers: Reopen in Container" command from the command palette
+
+The dev container will automatically set up Java, JBang, and all other required dependencies for you.
+
+#### Option 2: Manual Installation
+
+If you prefer not to use Dev Containers, you can manually install the required dependencies:
 
 For a Debian/Ubuntu-based system:
 
@@ -56,7 +71,7 @@ sudo dnf install gnuplot
 
 ### Using SDKMAN! (Alternative)
 
-As an alternative to the methods above, you can use SDKMAN! to manage your Java environment. We've included a `.sdkmanrc` file in the project root that specifies the required SDK versions.
+As an alternative to the methods above, you can use SDKMAN! to manage your Java environment. SDKMAN! is a tool that allows you to manage multiple versions of Java and other tools on your system.
 
 To use SDKMAN!:
 
@@ -67,17 +82,15 @@ curl -s "https://get.sdkman.io" | bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 ```
 
-2. Navigate to the project root directory and let SDKMAN! set up the environment:
+2. Navigate to the project root directory and use SDKMAN! to install the required tools:
 
 ```bash
 # Go to the project root
 cd /path/to/learn-dist-sys
 
 # Install the SDKs specified in .sdkmanrc
-sdk env install
-
-# Activate the environment
-sdk env
+sdk install java 23.0.1-open
+sdk install jbang
 ```
 
 This will install and set up Java 23 and JBang automatically. You'll still need to install Graphviz and Gnuplot separately as shown above.
