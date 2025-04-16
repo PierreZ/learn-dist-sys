@@ -34,9 +34,22 @@ Message Flow:
    Node n1 ----[broadcast, 1000]----> Node n2
    Node n1 ----[broadcast, 1000]----> Node n3
    
-4. Read:
-   Client ----[read]----> Broadcast Node
-   Broadcast Node ----[read_ok, [1000, ...]]----> Client
+4. Broadcast Another Value:
+   Client ----[broadcast, 2000]----> Node n2
+   Node n2 ----[broadcast_ok]----> Client
+   
+   Node n2 ----[broadcast, 2000]----> Node n1
+   Node n2 ----[broadcast, 2000]----> Node n3
+   
+5. Read (All Nodes Have Both Values):
+   Client ----[read]----> Node n1
+   Node n1 ----[read_ok, [1000, 2000]]----> Client
+   
+   Client ----[read]----> Node n2
+   Node n2 ----[read_ok, [1000, 2000]]----> Client
+   
+   Client ----[read]----> Node n3
+   Node n3 ----[read_ok, [1000, 2000]]----> Client
 ```
 
 ## JSON Exchange Examples
@@ -150,6 +163,13 @@ To help you tackle this challenge step-by-step, we've provided three script file
 To run any test, simply execute the appropriate script:
 
 ```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal
+../bin/maelstrom serve
+
+# Run the goal 1 test
 ./run-goal1.sh
 ```
 
@@ -255,6 +275,13 @@ For a single broadcast in a system with N nodes, we end up sending N(N-1) messag
 To test your solution for avoiding message amplification, run:
 
 ```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal
+../bin/maelstrom serve
+
+# Run the goal 1 test
 ./run-goal1.sh
 ```
 
@@ -268,13 +295,23 @@ To avoid message amplification, we need to track which messages we've already se
 2. If it's a new message, it stores it and forwards it to all other nodes
 3. If it's a message it has already seen, it ignores it (no forwarding)
 
-Implement this solution by:
-1. Tracking which messages each node has seen
-2. Only forwarding messages that haven't been seen before
+### ✅ TODO: Implement Message Deduplication
+
+**Your implementation tasks:**
+
+- [ ] **Track which messages each node has seen**
+- [ ] **Only forward messages that haven't been seen before**
 
 Once you've implemented your solution, run it with:
 
 ```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal
+../bin/maelstrom serve
+
+# Run the goal 1 test
 ./run-goal1.sh
 ```
 
@@ -317,6 +354,13 @@ This tells us which nodes can directly communicate with each other. For example,
 To test your solution for reducing broadcast latency using network topology, run:
 
 ```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal (if not already running)
+../bin/maelstrom serve
+
+# Run the goal 2 test
 ./run-goal2.sh
 ```
 
@@ -334,13 +378,23 @@ To improve latency, we need to leverage the topology information to make smarter
 1. Instead of broadcasting to all nodes, each node should only forward messages to its direct neighbors
 2. This way, messages travel through the most efficient paths in the network
 
-Implement this optimization by:
-1. Storing and using the topology information provided in the `topology` message
-2. Modifying your broadcast logic to only send messages to neighboring nodes
+### ✅ TODO: Implement Latency Optimization
+
+**Your implementation tasks:**
+
+- [ ] **Store and use the topology information** provided in the `topology` message
+- [ ] **Modify your broadcast logic** to only send messages to neighboring nodes
 
 Once you've implemented this optimization, run the test again:
 
 ```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal (if not already running)
+../bin/maelstrom serve
+
+# Run the goal 2 test
 ./run-goal2.sh
 ```
 
@@ -348,6 +402,23 @@ You should observe:
 - Reduced overall latency for message propagation
 - Fewer messages being sent across the network
 - More efficient use of the network topology
+
+### Experimenting with Network Conditions
+
+To truly understand how different network topologies and latency settings affect your distributed system, try modifying the `run-goal2.sh` script to experiment with various configurations:
+
+```bash
+# Look for these variables
+TOPOLOGY="tree4"   # Try changing to "line", "grid", "tree2", "tree3", "tree4", "total"
+LATENCY="100"   # Try different values like "50", "200", "500"
+```
+
+When you increase these parameters, observe:
+- **How message volume scales** with more nodes and higher message rates
+- **How gossip frequency affects** convergence time with higher loads
+- **Where bottlenecks appear** in your implementation as the system scales
+
+This kind of experimentation is crucial for understanding the real-world performance characteristics of distributed systems. In production environments, systems often behave differently at scale than they do with just a few nodes.
 
 ## Goal 3: Handling Network Partitions
 
@@ -365,6 +436,13 @@ This poses a serious challenge for broadcasting:
 To test your solution for handling network partitions, run:
 
 ```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal (if not already running)
+../bin/maelstrom serve
+
+# Run the goal 3 test
 ./run-goal3.sh
 ```
 
@@ -375,38 +453,60 @@ When examining the results, focus on:
 - Whether messages are eventually delivered to all nodes after partitions heal
 - The consistency of the message set across all nodes
 
-### Implementing Partition Tolerance with Gossip
+### ✅ TODO: Implement Partition Tolerance
 
-To handle network partitions, we need a more robust approach. This is where **gossip protocols** come in:
+**Your implementation tasks:**
+
+- [ ] **Create a background gossip mechanism** to periodically exchange messages
+- [ ] **Implement message tracking** to keep track of which messages need to be propagated
+- [ ] **Build a message exchange protocol** to share messages between nodes
+- [ ] **Handle gossip messages** from other nodes to reconcile differences
+
+Once you've implemented these features, run:
+
+```bash
+# Make sure you're in the step-3 directory
+cd step-3  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal (if not already running)
+../bin/maelstrom serve
+
+# Run the goal 3 test
+./run-goal3.sh
+```
+
+You should observe:
+- Messages eventually reaching all nodes despite partitions
+- The system recovering after partitions heal
+- Eventual consistency across all nodes in the system
+
+### Gossip Protocol: Implementation Guide
+
+To handle network partitions, we need a robust approach called a **gossip protocol**:
 
 1. Instead of simply forwarding new messages, nodes periodically exchange their entire message sets
 2. This ensures that even after a partition heals, nodes can catch up on messages they missed
 3. The system eventually reaches consistency across all nodes
 
-#### Gossip Protocol Implementation Details
+Here's how to implement an effective gossip protocol:
 
-Here's a detailed approach to implementing a gossip protocol for partition tolerance:
+#### 1. Background Gossip Thread
 
-##### 1. Background Gossip Thread
-
-You'll need a background mechanism to periodically run the gossip protocol. Virtual threads (introduced in Java 21) are ideal for this task since they're lightweight and efficient:
+Create a mechanism to periodically run gossip in the background:
 
 ```java
-// Set up a mechanism for periodic gossip
+// Set up a mechanism for periodic gossip using virtual threads (Java 21+)
 private boolean gossipStarted = false;
 private Thread gossipThread;
 
 private void startGossipProtocol() {
     if (!gossipStarted) {
-        // Using virtual threads (Java 21+)
         gossipThread = Thread.ofVirtual().name("gossip-thread").start(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    // Run the gossip protocol
+                    // Run the gossip protocol periodically
                     propagateMessages();
-                    
-                    // Wait before next gossip round (e.g., 1 second)
-                    Thread.sleep(1000);
+                    Thread.sleep(1000); // Wait between rounds
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
@@ -415,21 +515,24 @@ private void startGossipProtocol() {
                 }
             }
         });
-        
         gossipStarted = true;
     }
 }
 ```
 
-##### 2. Message Tracking
+#### 2. Message Tracking
 
-You need to track all messages that each node has seen:
+Track messages that need to be propagated:
 
 ```java
-// Track messages that need to be propagated to other nodes
+// We need two separate sets for different purposes:
+// 1. 'messages' - stores all messages we've seen (our local state)
+// 2. 'messagesToPropagate' - tracks which messages need to be sent to other nodes
+// Both are thread-safe to handle concurrent access from multiple threads
+private Set<Integer> messages = ConcurrentHashMap.newKeySet();
 private Set<Integer> messagesToPropagate = ConcurrentHashMap.newKeySet();
 
-// Add a message to the set of seen messages and mark it for propagation
+// Add a message to the set and mark it for propagation
 private void addMessage(int message) {
     if (messages.add(message)) {
         messagesToPropagate.add(message);
@@ -437,42 +540,25 @@ private void addMessage(int message) {
 }
 ```
 
-##### 3. Message Set Exchange
+#### 3. Message Exchange via Gossip
 
-The core of the gossip protocol is the exchange of message sets:
+The gossip protocol consists of two main parts:
+
+1. **Sending gossip messages**: Periodically share your message set with other nodes
+2. **Processing received gossip**: Handle gossip messages received from other nodes
+
+First, implement a method to send gossip messages to other nodes:
 
 ```java
-private void propagateMessages() throws Exception {
-    if (nodeId == null || messagesToPropagate.isEmpty()) {
-        return; // Not initialized or no messages to propagate
-    }
-    
-    // Make a copy to avoid concurrent modification
-    Set<Integer> currentMessages = new HashSet<>(messagesToPropagate);
-    
-    // Send a gossip message to each neighbor
-    for (String neighbor : neighbors) {
-        sendGossip(neighbor, currentMessages);
-    }
-}
-
-private void sendGossip(String dest, Set<Integer> messagesToSend) throws Exception {
-    ObjectNode body = mapper.createObjectNode();
-    body.put("type", "gossip");
-    body.put("msg_id", nextMsgId++);
-    
-    ArrayNode messagesArray = body.putArray("messages");
-    for (Integer message : messagesToSend) {
-        messagesArray.add(message);
-    }
-    
-    send(dest, body);
+// Send gossip messages to a neighbor
+private void sendGossip(String dest) throws Exception {
+    // TODO: Create a gossip message containing all your known messages
+    // TODO: Send this message to the selected neighbor
+    // This enables message sharing even during network partitions
 }
 ```
 
-##### 4. Handling Gossip Messages
-
-You need to handle incoming gossip messages and reconcile differences:
+Then, handle incoming gossip messages:
 
 ```java
 // In your handleMessage method, add a case for gossip messages
@@ -482,67 +568,57 @@ case "gossip":
 
 // Gossip handler method
 private void handleGossip(JsonNode body, String src) throws Exception {
-    if (body.has("messages")) {
-        JsonNode messagesNode = body.get("messages");
-        for (JsonNode messageNode : messagesNode) {
-            int message = messageNode.asInt();
-            addMessage(message);
-        }
-    }
+    // TODO: Extract messages from the gossip message
+    // TODO: Add each received message to your local message set
+    // This is where reconciliation happens - when you receive a message
+    // you haven't seen before, you should add it to your own set and 
+    // it will be propagated in future gossip rounds
 }
 ```
 
-##### 5. Error Handling and Resilience
+### Best Practices and Considerations
 
-Ensure your implementation is resilient to various failure scenarios:
+#### Key Implementation Strategies
 
-```java
-// Example of robust message sending with error handling
-private void sendWithRetry(String dest, ObjectNode body) {
-    try {
-        send(dest, body);
-    } catch (Exception e) {
-        // Log error but don't crash - the gossip protocol will retry later
-        System.err.println("Failed to send to " + dest + ": " + e.getMessage());
-    }
-}
-```
+- **Complete message set exchange**: Share your entire message set during gossip, not just new messages
+- **Random neighbor selection**: Select a random subset of neighbors for each gossip round
+- **Periodic execution**: Run the gossip protocol continuously in the background
+- **Thread safety**: Use thread-safe collections for shared data structures
+- **Error handling**: Ensure the gossip thread continues running despite individual failures
 
-##### 6. Thread Safety Considerations
+#### Common Pitfalls to Avoid
 
-When implementing gossip protocols, ensure thread safety for shared data structures:
+- **Over-optimization**: Don't minimize message exchange too aggressively
+- **Static neighbor selection**: Avoid always gossiping with the same neighbors
+- **Insufficient gossip frequency**: If gossip happens too rarely, recovery is slow
+- **Missing error handling**: Exceptions shouldn't terminate the gossip process
 
-```java
-// Use thread-safe collections for data shared between the main thread and gossip thread
-private Set<Integer> messages = Collections.synchronizedSet(new HashSet<>());
-// OR
-private Set<Integer> messages = ConcurrentHashMap.newKeySet();
-```
+#### Advanced Optimizations
 
-##### 7. Optimizations
-
-To make your gossip protocol more efficient:
+Once your basic implementation works, consider these improvements:
 
 - **Incremental Gossip**: Only send messages the other node hasn't seen yet
 - **Push-Pull Gossip**: Ask nodes what messages they have before sending
-- **Exponential Backoff**: Increase the interval between gossip attempts if the network is congested
+- **Exponential Backoff**: Increase the interval between gossip attempts when congested
 - **Priority-based Propagation**: Prioritize newer messages over older ones
 
-Implement a gossip protocol by following these steps:
-1. Adding a periodic gossip mechanism where nodes share their complete message sets
-2. Implementing message set reconciliation to identify and share missing messages
-3. Ensuring each node eventually receives all messages, even after network partitions
+### Experimenting with Scaling Parameters
 
-Once you've implemented your gossip-based solution, run:
+Now that you have a working partition-tolerant broadcast system, you can experiment with how it behaves under different loads and scales:
 
 ```bash
-./run-goal3.sh
+# Edit the run-goal3.sh script to try different parameters
+# Look for these variables:
+--node-count 3     # Try increasing to 5, 10, or more nodes
+--rate 1           # Try increasing to 5, 10, or 20 messages per second
 ```
 
-You should observe:
-- Messages eventually reaching all nodes despite partitions
-- The system recovering after partitions heal
-- Eventual consistency across all nodes in the system
+When you increase these parameters, observe:
+- **How message volume scales** with more nodes and higher message rates
+- **How gossip frequency affects** convergence time with higher loads
+- **Where bottlenecks appear** in your implementation as the system scales
+
+This kind of experimentation is crucial for understanding the real-world performance characteristics of distributed systems. In production environments, systems often behave differently at scale than they do with just a few nodes.
 
 ## Analyzing Results
 

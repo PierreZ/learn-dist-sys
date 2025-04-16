@@ -149,7 +149,7 @@ This approach seems reasonable at first glance. Each time a node receives a gene
 Let's run this implementation with Maelstrom:
 
 ```bash
-../bin/maelstrom test -w unique-ids --bin ./NaiveUniqueId.java --time-limit 5 --node-count 3 --availability total --nemesis partition
+../bin/maelstrom test -w unique-ids --bin ./NaiveUniqueId.java --time-limit 5 --node-count 3 --availability total
 ```
 
 This test will likely fail with an error like:
@@ -213,8 +213,6 @@ Here's a part of the history from a test run that demonstrates the issue:
 
 ```
 0	:invoke	:generate	nil
-:nemesis	:info	:start-partition	:one
-:nemesis	:info	:start-partition	[:isolated {"n0" #{"n2" "n1"}, "n2" #{"n0"}, "n1" #{"n0"}}]
 0	:ok	:generate	"1"
 2	:invoke	:generate	nil
 2	:ok	:generate	"1"   <- Duplicate ID "1"
@@ -271,159 +269,45 @@ To solve this problem, we need a way to ensure IDs are unique across all nodes. 
 
 For this exercise, we'll implement the simplest approach: using the node ID as a prefix for a local counter.
 
-### Step 4: Implement the Node ID Prefixing Strategy
+### ✅ TODO: Implement Unique ID Generation
 
-Update the server class to use the node ID as a prefix:
+**Your implementation tasks:**
 
-```java
-class UniqueIdServer {
-    private final ObjectMapper mapper = new ObjectMapper();
-    private String nodeId;
-    private int lastId = 0;  // Counter for IDs
-    
-    // ...other methods...
-    
-    private String handleGenerate(String src, String dest, JsonNode body) throws Exception {
-        // Increment the counter for each request
-        lastId++;
-        
-        // Create a unique ID using node ID as prefix
-        String uniqueId = nodeId + "-" + lastId;
-        
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "generate_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        responseBody.put("id", uniqueId);
-        
-        return createResponse(src, responseBody);
-    }
-}
-```
+- [ ] **Maintain a counter** that increments for each request
+- [ ] **Create unique IDs** by combining the node ID with the counter value (e.g., "n1-42")
+- [ ] **Return the unique ID** in a proper `generate_ok` response
 
-Now, when client 0's node's counter reaches 5, it returns "n0-5" as an ID.
-When client 1's node's counter reaches 5, it returns "n1-5" as an ID.
-When client 2's node's counter reaches 5, it returns "n2-5" as an ID.
+**Implementation Details:**
 
-These IDs are all different, ensuring uniqueness across the entire system.
+The Node ID Prefixing Strategy works as follows:
+
+1. Use the node ID as a prefix (e.g., "n1-", "n2-", etc.)
+2. Combine it with a locally incrementing counter
+3. Return the combined string as a unique ID
+
+When implemented correctly:
+- Node n0's 5th ID would be "n0-5"
+- Node n1's 5th ID would be "n1-5" 
+- Node n2's 5th ID would be "n2-5"
+
+These IDs are guaranteed to be different, ensuring uniqueness across the entire system even without coordination between nodes.
 
 ### Step 5: Test with Maelstrom
 
 We've provided a run script that will test your implementation with Maelstrom:
 
 ```bash
+# Make sure you're in the step-2 directory
+cd step-2  # if you're not already in this directory
+
+# Start the visualization server in a separate terminal
+../bin/maelstrom serve
+
+# Run the unique ID test
 ./run.sh
 ```
 
-This will execute the test with multiple nodes and network partitions. The test should pass, confirming that our IDs are truly unique, even when the network experiences partitions.
-
-## Complete Implementation
-
-Here's the complete implementation with the unique ID generation logic:
-
-```java
-///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS com.fasterxml.jackson.core:jackson-databind:2.15.2
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.util.Scanner;
-
-public class UniqueId {
-    public static void main(String[] args) throws Exception {
-        Scanner scanner = new Scanner(System.in);
-        UniqueIdServer server = new UniqueIdServer();
-        
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            try {
-                String response = server.handleMessage(line);
-                if (response != null) {
-                    System.out.println(response);
-                }
-            } catch (Exception e) {
-                System.err.println("Error processing message: " + e.getMessage() + "\nInput was: " + line);
-            }
-        }
-    }
-}
-
-class UniqueIdServer {
-    private final ObjectMapper mapper = new ObjectMapper();
-    private String nodeId;
-    private int lastId = 0;  // Counter for IDs
-    
-    public String handleMessage(String messageJson) throws Exception {
-        JsonNode message = mapper.readTree(messageJson);
-        String src = message.get("src").asText();
-        String dest = message.get("dest").asText();
-        JsonNode body = message.get("body");
-        String type = body.get("type").asText();
-        
-        if (type.equals("init")) {
-            return handleInit(src, dest, body);
-        } else if (type.equals("generate")) {
-            return handleGenerate(src, dest, body);
-        } else {
-            System.err.println("Unknown message type: " + type);
-            return null;
-        }
-    }
-    
-    private String handleInit(String src, String dest, JsonNode body) throws Exception {
-        nodeId = body.get("node_id").asText();
-        System.err.println("Node " + nodeId + " initialized");
-        
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "init_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        
-        return createResponse(src, responseBody);
-    }
-    
-    private String handleGenerate(String src, String dest, JsonNode body) throws Exception {
-        // Increment the counter for each request
-        lastId++;
-        
-        // Create a unique ID using node ID as prefix
-        String uniqueId = nodeId + "-" + lastId;
-        
-        ObjectNode responseBody = mapper.createObjectNode();
-        responseBody.put("type", "generate_ok");
-        responseBody.put("in_reply_to", body.get("msg_id").asInt());
-        responseBody.put("id", uniqueId);
-        
-        return createResponse(src, responseBody);
-    }
-    
-    private String createResponse(String dest, ObjectNode body) throws Exception {
-        ObjectNode response = mapper.createObjectNode();
-        response.put("src", nodeId);
-        response.put("dest", dest);
-        response.set("body", body);
-        
-        return mapper.writeValueAsString(response);
-    }
-}
-```
-
-## Understanding the Test Parameters
-
-When we run the test with:
-
-```bash
-../bin/maelstrom test -w unique-ids --bin ./UniqueId.java --time-limit 5 --node-count 3 --availability total --nemesis partition
-```
-
-We are:
-- Testing the `unique-ids` workload
-- Running for 5 seconds
-- Using 3 nodes for redundancy
-- Requiring total availability (all requests must succeed)
-- Introducing network partitions with the `partition` nemesis
-
-This tests that our ID generator works even under challenging conditions like network partitions.
+This will execute the test with multiple nodes. The test should pass, confirming that our IDs are truly unique.
 
 ## Reflection on Unique ID Generation
 
