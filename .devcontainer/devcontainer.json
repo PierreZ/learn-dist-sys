@@ -11,5 +11,7 @@
             ]
         }
     },
+    "postCreateCommand": "./setup.sh",
+    // Comment out the next line to run as root instead
     "remoteUser": "vscode"
 }
